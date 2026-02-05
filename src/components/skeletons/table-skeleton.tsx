@@ -11,11 +11,11 @@ interface TableSkeletonProps {
  */
 export function TableSkeleton({ rows = 5, columns = 5 }: TableSkeletonProps) {
   return (
-    <div className="w-full space-y-4">
+    <div className="space-y-4 w-full">
       {/* Header */}
-      <div className="flex gap-4 border-b pb-4">
+      <div className="flex gap-4 pb-4 border-b">
         {Array.from({ length: columns }).map((_, i) => (
-          <Skeleton key={i} className="h-4 flex-1" />
+          <Skeleton key={i} className="flex-1 h-4" />
         ))}
       </div>
 
@@ -23,7 +23,7 @@ export function TableSkeleton({ rows = 5, columns = 5 }: TableSkeletonProps) {
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div key={rowIndex} className="flex gap-4 py-3">
           {Array.from({ length: columns }).map((_, colIndex) => (
-            <Skeleton key={colIndex} className="h-4 flex-1" />
+            <Skeleton key={colIndex} className="flex-1 h-4" />
           ))}
         </div>
       ))}

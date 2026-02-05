@@ -9,5 +9,5 @@ interface SkeletonProps {
  * Animasyonlu placeholder için kullanılır
  */
 export function Skeleton({ className }: SkeletonProps) {
-  return <div className={cn("animate-pulse rounded-md bg-gray-200", className)} />;
+  return <div className={cn("bg-gray-200 rounded-md animate-pulse", className)} />;
 }

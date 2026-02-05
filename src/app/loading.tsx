@@ -7,7 +7,7 @@ import { PageSkeleton } from "@/components/skeletons";
  */
 export default function Loading() {
   return (
-    <div className="container mx-auto p-6">
+    <div className="mx-auto p-6 container">
       <PageSkeleton />
     </div>
   );

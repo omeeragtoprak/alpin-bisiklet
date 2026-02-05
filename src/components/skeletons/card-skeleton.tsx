@@ -6,13 +6,13 @@ import { Skeleton } from "./skeleton";
  */
 export function CardSkeleton() {
   return (
-    <div className="rounded-lg border p-6 space-y-4">
-      <Skeleton className="h-6 w-3/4" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-5/6" />
+    <div className="space-y-4 p-6 border rounded-lg">
+      <Skeleton className="w-3/4 h-6" />
+      <Skeleton className="w-full h-4" />
+      <Skeleton className="w-5/6 h-4" />
       <div className="flex gap-2 pt-2">
-        <Skeleton className="h-8 w-20" />
-        <Skeleton className="h-8 w-20" />
+        <Skeleton className="w-20 h-8" />
+        <Skeleton className="w-20 h-8" />
       </div>
     </div>
   );
@@ -24,7 +24,7 @@ export function CardSkeleton() {
  */
 export function CardGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="gap-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: count }).map((_, i) => (
         <CardSkeleton key={i} />
       ))}
