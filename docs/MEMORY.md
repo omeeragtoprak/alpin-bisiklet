@@ -1,6 +1,6 @@
 # Alpin Bisiklet - Proje Hafızası
 
-> Bu dosya proje yapısı, kurulumlar ve kodlama kurallarını içerir.
+> Bu dosya proje yapısı, kurulumlar ve kodlama kurallarını içerir. deneme eklendi
 > AI asistanlar ve geliştiriciler için referans belgesidir.
 > **ÖNEMLİ:** Yeni kod yazarken bu dosyadaki kurallara ve klasör yapısına uyulmalıdır.
 
