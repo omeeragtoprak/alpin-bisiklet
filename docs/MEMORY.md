@@ -55,6 +55,14 @@ src/
 │
 ├── components/                 # React Bileşenleri
 │   ├── ui/                    # shadcn/ui bileşenleri (DOKUNMA)
+│   ├── skeletons/             # Loading skeleton bileşenleri
+│   │   ├── skeleton.tsx       # Base skeleton
+│   │   ├── table-skeleton.tsx
+│   │   ├── card-skeleton.tsx
+│   │   ├── form-skeleton.tsx
+│   │   ├── list-skeleton.tsx
+│   │   ├── page-skeleton.tsx
+│   │   └── index.ts
 │   ├── forms/                 # Form bileşenleri
 │   │   ├── product-form.tsx
 │   │   └── category-form.tsx
@@ -113,6 +121,151 @@ proxy.ts                       # Route protection (Next.js 16+)
 ---
 
 ## KOD YAZIM KURALLARI
+
+### 0. Modern React/Next.js Kuralları (ZORUNLU)
+
+#### Import Kuralları
+
+```typescript
+// ❌ YANLIŞ - Eski stil
+import React from "react";
+const [state, setState] = React.useState();
+React.useEffect(() => {}, []);
+
+// ✅ DOĞRU - Named import
+import { useState, useEffect, useCallback, useMemo } from "react";
+const [state, setState] = useState();
+useEffect(() => {}, []);
+```
+
+#### use client / use server Kuralları
+
+| Direktif | Ne Zaman Kullanılır |
+|----------|---------------------|
+| `"use client"` | Hook kullanan, event handler olan, browser API kullanan bileşenler |
+| `"use server"` | Server Action fonksiyonları (form submit, mutation) |
+| **Hiçbiri** | Varsayılan Server Component (veri çekme, statik render) |
+
+```typescript
+// Server Component (varsayılan) - direktif YOK
+export default async function ProductsPage() {
+  const products = await getProducts(); // Doğrudan veri çek
+  return <ProductList products={products} />;
+}
+
+// Client Component - interaktif
+"use client";
+import { useState } from "react";
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(c => c + 1)}>{count}</button>;
+}
+
+// Server Action - form/mutation
+"use server";
+
+export async function createProduct(formData: FormData) {
+  // Veritabanı işlemi
+}
+```
+
+#### Suspense ve Loading Kuralları
+
+```typescript
+// ❌ YANLIŞ - Manuel loading state
+"use client";
+import { useState, useEffect } from "react";
+
+export function ProductList() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    fetch("/api/products")
+      .then(res => res.json())
+      .then(data => {
+        setProducts(data);
+        setLoading(false);
+      });
+  }, []);
+  
+  if (loading) return <div>Loading...</div>;
+  return <div>{/* ... */}</div>;
+}
+
+// ✅ DOĞRU - Suspense + Server Component
+import { Suspense } from "react";
+import { ProductListSkeleton } from "@/components/skeletons";
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<ProductListSkeleton />}>
+      <ProductList />
+    </Suspense>
+  );
+}
+
+// ProductList Server Component - veriyi doğrudan çeker
+async function ProductList() {
+  const products = await getProducts();
+  return <div>{/* ... */}</div>;
+}
+```
+
+#### Skeleton Kullanım Kuralları
+
+| Bileşen | Skeleton |
+|---------|----------|
+| Tablo | `<TableSkeleton rows={10} />` |
+| Kart | `<CardSkeleton />` |
+| Form | `<FormSkeleton />` |
+| Liste | `<ListSkeleton count={5} />` |
+| Sayfa | `<PageSkeleton />` |
+
+```typescript
+// Her async bileşen Suspense ile sarılmalı
+<Suspense fallback={<TableSkeleton />}>
+  <ProductsTable />
+</Suspense>
+```
+
+#### TanStack Query ile Suspense
+
+```typescript
+// ✅ DOĞRU - useSuspenseQuery kullan
+"use client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+
+export function ProductList() {
+  // Loading state yok - Suspense halleder
+  const { data } = useSuspenseQuery({
+    queryKey: ["products"],
+    queryFn: getProducts,
+  });
+  
+  return <div>{/* data her zaman mevcut */}</div>;
+}
+
+// Parent'ta Suspense ile sar
+<Suspense fallback={<ProductListSkeleton />}>
+  <ProductList />
+</Suspense>
+```
+
+#### Yasaklı Kullanımlar
+
+| ❌ Yasak | ✅ Alternatif |
+|----------|---------------|
+| `React.useState` | `useState` (named import) |
+| `React.useEffect` | `useEffect` (named import) |
+| `React.FC` | Direkt function declaration |
+| `useEffect` ile veri çekme | Server Component veya TanStack Query |
+| Manuel loading state | Suspense + Skeleton |
+| `any` tipi | Doğru tip tanımı |
+| `// @ts-ignore` | Tip düzeltmesi |
+
+---
 
 ### 1. Dosya Oluşturma Sırası
 
