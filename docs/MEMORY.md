@@ -264,6 +264,55 @@ export function ProductList() {
 | Manuel loading state | Suspense + Skeleton |
 | `any` tipi | Doğru tip tanımı |
 | `// @ts-ignore` | Tip düzeltmesi |
+| AI'ın kendi başına renk seçmesi | Kullanıcıya sor veya CSS değişkeni kullan |
+| `globals.css`'e izinsiz renk ekleme | Kullanıcıya sor |
+
+---
+
+### 0.1 Renk ve Stil Kuralları (ZORUNLU)
+
+#### AI İçin Renk Kuralı (KRİTİK)
+
+> **AI ASLA kendi başına renk kararı alamaz.**
+> - Tailwind renkleri (`red-500`, `blue-600`, vb.) sadece KULLANICI AÇIKÇA İSTERSE kullanılır
+> - `globals.css` dosyasına renk ekleme KULLANICIYA SORULMADAN yapılmaz
+> - Varsayılan olarak HER ZAMAN CSS değişkenleri kullanılır
+
+```typescript
+// ❌ YANLIŞ - AI kendi başına renk seçemez
+<div className="bg-gray-100 text-gray-900" />
+<div className="bg-blue-500 text-red-500" />
+<div style={{ backgroundColor: "#f5f5f5" }} />
+
+// ✅ DOĞRU - Varsayılan: CSS değişkenleri
+<div className="bg-background text-foreground" />
+<div className="bg-primary text-destructive" />
+<div className="bg-muted text-muted-foreground" />
+
+// ✅ DOĞRU - Kullanıcı "red-500 kullan" derse
+<div className="text-red-500" />  // Sadece kullanıcı istedi ise
+```
+
+#### Mevcut CSS Değişkenleri
+
+| Değişken | Kullanım |
+|----------|----------|
+| `background` / `foreground` | Ana arka plan ve yazı |
+| `card` / `card-foreground` | Kartlar |
+| `primary` / `primary-foreground` | Ana butonlar |
+| `secondary` / `secondary-foreground` | İkincil butonlar |
+| `muted` / `muted-foreground` | Pasif alanlar |
+| `accent` / `accent-foreground` | Hover durumları |
+| `destructive` | Hata, silme |
+| `border` / `input` / `ring` | Kenarlar, input, focus |
+
+#### Opacity Kullanımı
+
+```typescript
+<div className="bg-primary/10" />      // %10 opacity
+<div className="bg-primary/50" />      // %50 opacity
+<div className="hover:bg-accent/80" /> // hover'da %80
+```
 
 ---
 
