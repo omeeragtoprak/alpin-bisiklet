@@ -788,6 +788,58 @@ export const config = {
 
 ---
 
+## ÖZEL DOSYALAR (Next.js 16 File Conventions)
+
+### Konum: `src/app/` (root)
+
+| Dosya | HTTP | Açıklama | Tetikleyici |
+|-------|------|----------|-------------|
+| `not-found.tsx` | 404 | Sayfa bulunamadı | `notFound()` veya olmayan rota |
+| `unauthorized.tsx` | 401 | Giriş gerekli | `unauthorized()` |
+| `forbidden.tsx` | 403 | Yetki yok | `forbidden()` |
+| `loading.tsx` | - | Yükleme durumu | Otomatik (Suspense) |
+
+### Kullanım Kuralları:
+
+```typescript
+// Server Component içinde kullanım
+import { unauthorized, forbidden, notFound } from "next/navigation";
+
+export default async function ProtectedPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  
+  // 1. Giriş kontrolü - 401
+  if (!session) {
+    unauthorized();
+  }
+  
+  // 2. Yetki kontrolü - 403
+  if (!session.user.isAdmin) {
+    forbidden();
+  }
+  
+  // 3. Veri kontrolü - 404
+  const data = await getData();
+  if (!data) {
+    notFound();
+  }
+  
+  return <div>...</div>;
+}
+```
+
+### Kurallar:
+
+| Kural | Açıklama |
+|-------|----------|
+| **Konum** | Tüm özel dosyalar `src/app/` root'ta bulunur |
+| **loading.tsx** | Her route segment için ayrı loading olabilir |
+| **unauthorized** | Auth kontrolünde session yoksa kullanılır |
+| **forbidden** | Auth var ama yetki yoksa kullanılır |
+| **notFound** | Veri bulunamadığında kullanılır |
+
+---
+
 ## SAYFA YAPISI
 
 ### Konum: `src/app/(dashboard)/`
