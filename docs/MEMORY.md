@@ -266,6 +266,13 @@ export function ProductList() {
 | `// @ts-ignore` | Tip düzeltmesi |
 | AI'ın kendi başına renk seçmesi | Kullanıcıya sor veya CSS değişkeni kullan |
 | `globals.css`'e izinsiz renk ekleme | Kullanıcıya sor |
+| `<img>` without `alt` | `alt="açıklama"` ekle |
+| `<button><Icon /></button>` | `aria-label` ekle |
+| `<input>` without label | `<label>` veya `aria-label` |
+| Birden fazla `<h1>` | Sayfa başına tek `<h1>` |
+| `h1 → h3` atlama | Sıralı başlık hiyerarşisi |
+| HTML `<img>` etiketi | `next/image` kullan |
+| `fill` without `sizes` | `sizes` prop zorunlu |
 
 ---
 
@@ -313,6 +320,323 @@ export function ProductList() {
 <div className="bg-primary/50" />      // %50 opacity
 <div className="hover:bg-accent/80" /> // hover'da %80
 ```
+
+---
+
+### 0.2 Erişilebilirlik Kuralları (WCAG 2.2 - ZORUNLU)
+
+> **Tüm UI bileşenleri erişilebilir olmalıdır.**
+> Engelli kullanıcıların siteyi rahatça kullanabilmesi için aşağıdaki kurallar zorunludur.
+
+#### Başlık Hiyerarşisi (Heading Hierarchy)
+
+| Kural | Açıklama |
+|-------|----------|
+| Sayfa başına tek `<h1>` | Her sayfada yalnızca bir adet `<h1>` olmalı |
+| Sıralı atlama yasak | `h1 → h3` atlanamaz, `h1 → h2 → h3` sıralı gitmeli |
+| Anlamlı başlıklar | Başlık içeriği sayfayı/bölümü tanımlamalı |
+
+```tsx
+// ❌ YANLIŞ
+<h1>Dashboard</h1>
+<h3>Ürünler</h3>  // h2 atlandı
+
+// ✅ DOĞRU
+<h1>Dashboard</h1>
+<h2>Ürünler</h2>
+<h3>Son Eklenenler</h3>
+```
+
+#### Form Erişilebilirliği
+
+| Kural | Açıklama |
+|-------|----------|
+| Her input'a label | `<label htmlFor="id">` veya `aria-label` zorunlu |
+| Hata mesajları | `aria-describedby` ile input'a bağlanmalı |
+| Required alanlar | `aria-required="true"` eklenmeli |
+| Placeholder yeterli değil | Label yerine placeholder kullanılmamalı |
+
+```tsx
+// ❌ YANLIŞ
+<input placeholder="Email" />
+
+// ✅ DOĞRU
+<label htmlFor="email">Email</label>
+<input 
+  id="email" 
+  aria-required="true"
+  aria-describedby="email-error"
+/>
+{error && <span id="email-error" role="alert">{error}</span>}
+```
+
+#### Buton ve Link Kuralları
+
+| Kural | Açıklama |
+|-------|----------|
+| Anlamlı içerik | "Tıkla", "Buraya tıkla" yasak |
+| Icon-only buton | `aria-label` zorunlu |
+| Link vs Button | Navigasyon = `<a>`, Aksiyon = `<button>` |
+| Yeni sekme uyarısı | `target="_blank"` için screen reader bilgisi |
+
+```tsx
+// ❌ YANLIŞ
+<button><TrashIcon /></button>
+<a href="#">Tıkla</a>
+
+// ✅ DOĞRU
+<button aria-label="Ürünü sil"><TrashIcon /></button>
+<a href="/urunler">Ürünleri görüntüle</a>
+<a href="..." target="_blank" rel="noopener">
+  Dış site <span className="sr-only">(yeni sekmede açılır)</span>
+</a>
+```
+
+#### Görsel Erişilebilirlik
+
+| Kural | Açıklama |
+|-------|----------|
+| Alt text zorunlu | Tüm `<img>` için `alt` attribute |
+| Dekoratif görseller | `alt=""` ve `aria-hidden="true"` |
+| Renk kontrastı | Minimum 4.5:1 (normal), 3:1 (büyük text) |
+| Sadece renkle bilgi yok | Renk + ikon/text birlikte kullanılmalı |
+
+```tsx
+// ❌ YANLIŞ
+<img src="product.jpg" />
+<span className="text-destructive">Hata</span>  // Sadece renk
+
+// ✅ DOĞRU
+<img src="product.jpg" alt="Trek Marlin 7 Dağ Bisikleti" />
+<span className="text-destructive">
+  <AlertIcon aria-hidden="true" /> Hata oluştu
+</span>
+```
+
+#### Klavye Navigasyonu
+
+| Kural | Açıklama |
+|-------|----------|
+| Tab ile ulaşılabilir | Tüm interaktif öğeler keyboard accessible |
+| Focus görünür | `focus-visible:ring-2` zorunlu |
+| Focus sırası mantıklı | DOM sırası = görsel sıra |
+
+```tsx
+// ✅ Focus her zaman görünür
+<button className="focus-visible:ring-2 focus-visible:ring-ring">
+  Kaydet
+</button>
+```
+
+#### Dinamik İçerik & ARIA Live
+
+```tsx
+// ✅ Loading durumu
+<div aria-busy={isLoading} aria-live="polite">
+  {isLoading ? "Yükleniyor..." : content}
+</div>
+
+// ✅ Toast/Alert bildirimi
+<div role="alert" aria-live="assertive">
+  Ürün başarıyla kaydedildi
+</div>
+
+// ✅ Modal/Dialog
+<div role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+  <h2 id="dialog-title">Onay</h2>
+</div>
+```
+
+#### Semantic HTML Kullanımı
+
+| Element | Kullanım |
+|---------|----------|
+| `<header>` | Sayfa/bölüm başlığı |
+| `<nav>` | Navigasyon menüleri |
+| `<main>` | Ana içerik (sayfa başına tek) |
+| `<aside>` | Yan içerik (sidebar) |
+| `<footer>` | Alt bilgi |
+| `<section>` | Tematik bölümler (`aria-labelledby` ile) |
+
+#### Screen Reader Yardımcıları
+
+```tsx
+// Görsel olarak gizli ama screen reader okur
+<span className="sr-only">Ekran okuyucu için metin</span>
+
+// Screen reader'dan gizle (dekoratif ikonlar)
+<Icon aria-hidden="true" />
+```
+
+#### Erişilebilirlik Yasak Listesi
+
+| ❌ Yasak | ✅ Alternatif |
+|----------|---------------|
+| `<img>` without `alt` | `<img alt="açıklama">` |
+| `<button><Icon /></button>` | `<button aria-label="...">` |
+| `<input>` without label | `<label>` veya `aria-label` |
+| `<div onClick>` | `<button>` kullan |
+| Sadece renk ile bilgi | Renk + ikon/text |
+| `h1 → h3` atlama | Sıralı başlık hiyerarşisi |
+| "Tıkla", "Buraya tıkla" | Anlamlı link/buton metni |
+
+---
+
+### 0.3 Next.js Image Kullanım Kuralları (ZORUNLU)
+
+> **HTML `<img>` etiketi YASAKTIR. Her zaman `next/image` kullanılmalıdır.**
+
+#### Temel Kullanım
+
+```tsx
+import Image from "next/image";
+
+// ✅ Statik import (önerilen - otomatik optimizasyon)
+import productImage from "@/public/images/product.jpg";
+
+<Image
+  src={productImage}
+  alt="Trek Marlin 7 Dağ Bisikleti"
+  placeholder="blur"  // Statik import'ta otomatik blur
+/>
+
+// ✅ Dinamik/Remote görsel
+<Image
+  src="https://cdn.example.com/product.jpg"
+  alt="Ürün görseli"
+  width={800}
+  height={600}
+  placeholder="blur"
+  blurDataURL="data:image/jpeg;base64,..."
+/>
+```
+
+#### Zorunlu Props
+
+| Prop | Açıklama | Zorunlu |
+|------|----------|---------|
+| `src` | Görsel kaynağı | ✅ Evet |
+| `alt` | Erişilebilirlik için açıklama | ✅ Evet |
+| `width` + `height` | Boyutlar (fill kullanılmıyorsa) | ✅ Evet |
+| `fill` | Parent'ı doldur (width/height yerine) | Alternatif |
+
+#### `sizes` Prop (Responsive - ZORUNLU)
+
+`fill` kullanıldığında veya responsive tasarımda **sizes zorunludur**:
+
+```tsx
+// ❌ YANLIŞ - sizes olmadan fill
+<Image src="..." alt="..." fill />
+
+// ✅ DOĞRU - sizes ile fill
+<Image
+  src="..."
+  alt="..."
+  fill
+  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+/>
+```
+
+| Breakpoint | sizes Değeri | Kullanım |
+|------------|--------------|----------|
+| Mobil (< 768px) | `100vw` | Tam genişlik |
+| Tablet (< 1200px) | `50vw` | Yarı genişlik |
+| Desktop | `33vw` | Grid'de 1/3 |
+
+#### `priority` Prop (LCP Optimizasyonu)
+
+Above-the-fold (ilk görünen) görseller için **priority** kullan:
+
+```tsx
+// ✅ Hero banner, ana ürün görseli
+<Image
+  src={heroImage}
+  alt="Ana banner"
+  priority  // Lazy loading devre dışı, preload aktif
+  sizes="100vw"
+/>
+
+// ❌ Sayfa altındaki görsellerde priority KULLANMA
+<Image src={footerImage} alt="..." />  // Varsayılan lazy loading
+```
+
+#### `placeholder` Prop (UX)
+
+```tsx
+// ✅ Statik import - otomatik blur
+import product from "@/public/product.jpg";
+<Image src={product} alt="..." placeholder="blur" />
+
+// ✅ Remote görsel - manuel blurDataURL
+<Image
+  src="https://..."
+  alt="..."
+  placeholder="blur"
+  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+/>
+
+// Blur data URL oluşturma: plaiceholder veya png-pixel.com
+```
+
+#### `fill` ile Kullanım (Dinamik Boyut)
+
+```tsx
+// Parent'a position: relative gerekli!
+<div className="relative aspect-video">
+  <Image
+    src="..."
+    alt="..."
+    fill
+    sizes="(max-width: 768px) 100vw, 50vw"
+    className="object-cover"  // cover, contain, none
+  />
+</div>
+```
+
+#### Remote Görseller için next.config.ts
+
+```typescript
+// next.config.ts
+import type { NextConfig } from "next";
+
+const config: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.alpinbisiklet.com",
+        pathname: "/images/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.cloudinary.com",
+      },
+    ],
+  },
+};
+
+export default config;
+```
+
+#### Image Yasak Listesi
+
+| ❌ Yasak | ✅ Alternatif |
+|----------|---------------|
+| `<img src="...">` | `<Image src="..." />` |
+| `fill` without `sizes` | `sizes` prop ekle |
+| Remote görsel without config | `remotePatterns` ekle |
+| LCP görsel without `priority` | `priority` ekle |
+| `alt=""` (boş) meaningful görsel | Açıklayıcı alt text |
+| Fixed width/height responsive'de | `fill` + `sizes` kullan |
+
+#### Performans Kontrol Listesi
+
+- [ ] Tüm görseller `next/image` ile mi?
+- [ ] LCP görseline `priority` eklendi mi?
+- [ ] `fill` kullanıyorsa `sizes` var mı?
+- [ ] Remote görseller `remotePatterns`'da tanımlı mı?
+- [ ] Statik görsellerde `placeholder="blur"` var mı?
+- [ ] `alt` text anlamlı mı?
 
 ---
 
