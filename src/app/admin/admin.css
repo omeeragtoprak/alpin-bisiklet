@@ -1,0 +1,111 @@
+/* ═══════════════════════════════════════════
+   Admin Panel — Profesyonel Hafif Tema
+   [data-admin] scope ile magaza temasindan bagimsiz
+   ═══════════════════════════════════════════ */
+
+[data-admin] {
+  /* Background — Hafif beyaz-mavi, ferah */
+  --background: oklch(0.985 0.002 250);
+  --foreground: oklch(0.15 0.01 250);
+
+  /* Card — Saf beyaz */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.01 250);
+
+  /* Popover */
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.01 250);
+
+  /* Primary — Profesyonel mavi-indigo */
+  --primary: oklch(0.50 0.14 260);
+  --primary-foreground: oklch(0.99 0 0);
+
+  /* Secondary — Yumusak gri */
+  --secondary: oklch(0.965 0.003 250);
+  --secondary-foreground: oklch(0.30 0.01 250);
+
+  /* Muted — Cool gray tonlari */
+  --muted: oklch(0.960 0.004 250);
+  --muted-foreground: oklch(0.50 0.01 250);
+
+  /* Accent — Alpin yesil (sidebar active) */
+  --accent: oklch(0.95 0.02 155);
+  --accent-foreground: oklch(0.30 0.08 155);
+
+  /* Destructive */
+  --destructive: oklch(0.58 0.22 27);
+
+  /* Borders & Inputs */
+  --border: oklch(0.92 0.004 250);
+  --input: oklch(0.92 0.004 250);
+  --ring: oklch(0.50 0.14 260);
+
+  /* Charts */
+  --chart-1: oklch(0.50 0.14 260);
+  --chart-2: oklch(0.65 0.15 155);
+  --chart-3: oklch(0.78 0.14 75);
+  --chart-4: oklch(0.60 0.10 330);
+  --chart-5: oklch(0.55 0.06 55);
+
+  /* Sidebar */
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.25 0.01 250);
+  --sidebar-primary: oklch(0.50 0.14 260);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.96 0.02 260);
+  --sidebar-accent-foreground: oklch(0.25 0.01 250);
+  --sidebar-border: oklch(0.93 0.004 250);
+  --sidebar-ring: oklch(0.50 0.14 260);
+}
+
+/* Admin kart golgeleri */
+[data-admin] [data-slot="card"],
+[data-admin] .admin-card {
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.04),
+    0 1px 3px oklch(0 0 0 / 0.06);
+  border-color: oklch(0.93 0.004 250);
+}
+
+[data-admin] [data-slot="card"]:hover,
+[data-admin] .admin-card:hover {
+  box-shadow:
+    0 2px 4px oklch(0 0 0 / 0.04),
+    0 4px 8px oklch(0 0 0 / 0.06);
+}
+
+/* Admin focus ring */
+[data-admin] :focus-visible {
+  outline: 2px solid oklch(0.50 0.14 260);
+  outline-offset: 2px;
+}
+
+/* Admin scrollbar */
+[data-admin] ::-webkit-scrollbar {
+  width: 6px;
+}
+
+[data-admin] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-admin] ::-webkit-scrollbar-thumb {
+  background: oklch(0.85 0 0);
+  border-radius: 3px;
+}
+
+[data-admin] ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.75 0 0);
+}
+
+/* Print stilleri */
+@media print {
+  [data-admin] aside,
+  [data-admin] header {
+    display: none !important;
+  }
+
+  [data-admin] main {
+    padding: 0 !important;
+  }
+}

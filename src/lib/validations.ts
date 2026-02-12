@@ -27,13 +27,47 @@ export const sortSchema = z.object({
 // ============================================
 
 /** Ürün oluşturma schema'sı */
+/** Ürün görseli schema'sı */
+export const productImageSchema = z.object({
+  url: z.string().url("Geçerli bir URL gerekli"),
+  alt: z.string().optional(),
+  order: z.number().int().default(0),
+});
+
+/** Ürün varyantı schema'sı */
+export const productVariantSchema = z.object({
+  name: z.string().min(1, "Varyant adı gerekli"),
+  sku: z.string().optional(),
+  barcode: z.string().optional(),
+  price: z.number().positive().optional(),
+  stock: z.number().int().nonnegative().default(0),
+  isActive: z.boolean().default(true),
+});
+
+/** Ürün oluşturma schema'sı */
 export const createProductSchema = z.object({
   name: z.string().min(2, "Ürün adı en az 2 karakter olmalı"),
   description: z.string().optional(),
+  shortDescription: z.string().optional(),
   price: z.number().positive("Fiyat pozitif olmalı"),
+  comparePrice: z.number().positive().optional(),
+  cost: z.number().positive().optional(),
+  sku: z.string().optional(),
+  barcode: z.string().optional(),
   stock: z.number().int().nonnegative("Stok negatif olamaz").default(0),
+  lowStockAlert: z.number().int().nonnegative().default(5),
+  trackStock: z.boolean().default(true),
+  weight: z.number().positive().optional(),
+  width: z.number().positive().optional(),
+  height: z.number().positive().optional(),
+  length: z.number().positive().optional(),
   categoryId: z.number().int().positive().optional(),
+  brandId: z.number().int().positive().optional(),
   isActive: z.boolean().default(true),
+  isFeatured: z.boolean().default(false),
+  isNew: z.boolean().default(false),
+  images: z.array(productImageSchema).optional(),
+  variants: z.array(productVariantSchema).optional(),
 });
 
 /** Ürün güncelleme schema'sı (tüm alanlar opsiyonel) */
@@ -54,7 +88,11 @@ export const createCategorySchema = z.object({
     .string()
     .regex(/^[a-z0-9-]+$/, "Slug sadece küçük harf, rakam ve tire içerebilir")
     .optional(),
-  parentId: z.number().int().positive().optional(),
+  description: z.string().optional(),
+  image: z.string().optional(),
+  parentId: z.number().int().positive().optional().nullable(),
+  isActive: z.boolean().default(true),
+  order: z.number().int().default(0),
 });
 
 /** Kategori güncelleme schema'sı */
@@ -101,3 +139,100 @@ export const registerSchema = z
 /** Kullanıcı tipleri */
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+// ============================================
+// MARKA SCHEMA'LARI
+// ============================================
+
+/** Marka oluşturma schema'sı */
+export const createBrandSchema = z.object({
+  name: z.string().min(2, "Marka adı en az 2 karakter olmalı"),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-]+$/, "Slug sadece küçük harf, rakam ve tire içerebilir")
+    .optional(),
+  description: z.string().optional(),
+  logo: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+/** Marka güncelleme schema'sı */
+export const updateBrandSchema = createBrandSchema.partial();
+
+/** Marka tipleri */
+export type CreateBrandInput = z.infer<typeof createBrandSchema>;
+export type UpdateBrandInput = z.infer<typeof updateBrandSchema>;
+
+// ============================================
+// BANNER SCHEMA'LARI
+// ============================================
+
+/** Banner oluşturma schema'sı */
+export const createBannerSchema = z.object({
+  title: z.string().min(2, "Başlık en az 2 karakter olmalı"),
+  subtitle: z.string().optional(),
+  image: z.string().url("Geçerli bir resim URL'si gerekli"),
+  mobileImage: z.string().optional(),
+  link: z.string().optional(),
+  buttonText: z.string().optional(),
+  position: z.enum(["HERO", "SIDEBAR", "CATEGORY", "PRODUCT", "POPUP"]).default("HERO"),
+  order: z.number().int().default(0),
+  isActive: z.boolean().default(true),
+  startDate: z.string().optional(), // Date picker usually returns string
+  endDate: z.string().optional(),
+});
+
+/** Banner güncelleme schema'sı */
+export const updateBannerSchema = createBannerSchema.partial();
+
+/** Banner tipleri */
+export type CreateBannerInput = z.infer<typeof createBannerSchema>;
+export type UpdateBannerInput = z.infer<typeof updateBannerSchema>;
+
+// ============================================
+// SAYFA SCHEMA'LARI
+// ============================================
+
+/** Sayfa olusturma schema'si */
+export const createPageSchema = z.object({
+  title: z.string().min(2, "Baslik en az 2 karakter olmali"),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-]+$/, "Slug sadece kucuk harf, rakam ve tire icerebilir")
+    .optional(),
+  content: z.string().min(1, "Icerik gerekli"),
+  metaTitle: z.string().optional().nullable(),
+  metaDescription: z.string().optional().nullable(),
+  isPublished: z.boolean().default(false),
+});
+
+/** Sayfa guncelleme schema'si */
+export const updatePageSchema = createPageSchema.partial();
+
+/** Sayfa tipleri */
+export type CreatePageInput = z.infer<typeof createPageSchema>;
+export type UpdatePageInput = z.infer<typeof updatePageSchema>;
+
+// ============================================
+// KUPON SCHEMA'LARI
+// ============================================
+
+/** Kupon olusturma schema'si */
+export const createCouponSchema = z.object({
+  code: z.string().min(3, "Kupon kodu en az 3 karakter olmali"),
+  type: z.enum(["PERCENTAGE", "FIXED", "FREE_SHIPPING"]),
+  value: z.number().nonnegative("Deger negatif olamaz"),
+  minPurchase: z.number().positive().optional().nullable(),
+  maxDiscount: z.number().positive().optional().nullable(),
+  maxUses: z.number().int().positive().optional().nullable(),
+  validFrom: z.string().or(z.date()),
+  validTo: z.string().or(z.date()),
+  isActive: z.boolean().default(true),
+});
+
+/** Kupon guncelleme schema'si */
+export const updateCouponSchema = createCouponSchema.partial();
+
+/** Kupon tipleri */
+export type CreateCouponInput = z.infer<typeof createCouponSchema>;
+export type UpdateCouponInput = z.infer<typeof updateCouponSchema>;

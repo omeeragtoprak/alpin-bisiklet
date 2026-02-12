@@ -3,6 +3,9 @@ export interface Category {
   id: number;
   name: string;
   slug: string;
+  image: string | null; // Added image
+  order: number; // Added order
+  isActive: boolean; // Added isActive
   parentId: number | null;
   createdAt: Date;
   updatedAt: Date;
@@ -13,6 +16,10 @@ export interface CategoryListItem {
   id: number;
   name: string;
   slug: string;
+  image: string | null; // Added image
+  parentId: number | null; // Added parentId
+  order: number; // Added order
+  isActive: boolean; // Added isActive
   productCount: number;
 }
 

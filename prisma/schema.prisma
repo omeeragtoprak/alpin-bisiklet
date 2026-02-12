@@ -1,0 +1,604 @@
+// Alpin Bisiklet - E-Ticaret Veritabanı Şeması
+// SQLite + Prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// BETTER AUTH TABLOLARI
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified Boolean   @default(false)
+  image         String?
+  phone         String?
+  role          String    @default("CUSTOMER")
+  banned        Boolean   @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // İlişkiler
+  sessions      Session[]
+  accounts      Account[]
+  addresses     Address[]
+  orders        Order[]
+  cart          Cart?
+  favorites     Favorite[]
+  reviews       Review[]
+  activityLogs  ActivityLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verifications")
+}
+
+// Role değerleri: "ADMIN", "CUSTOMER"
+
+// ============================================
+// ADRES
+// ============================================
+
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String   // Ev, İş, vb.
+  firstName  String
+  lastName   String
+  phone      String
+  city       String
+  district   String
+  neighborhood String?
+  address    String   // Detaylı adres
+  postalCode String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shippingOrders  Order[] @relation("ShippingAddress")
+  billingOrders   Order[] @relation("BillingAddress")
+
+  @@map("addresses")
+}
+
+// ============================================
+// KATEGORİ
+// ============================================
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String?
+  parentId    Int?
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  parent   Category?  @relation("CategoryToCategory", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryToCategory")
+  products Product[]
+
+  @@map("categories")
+}
+
+// ============================================
+// MARKA
+// ============================================
+
+model Brand {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  logo        String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@map("brands")
+}
+
+// ============================================
+// ÜRÜN
+// ============================================
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  name          String
+  slug          String   @unique
+  description   String?
+  shortDescription String?
+
+  // Fiyatlandırma (Float for SQLite compatibility)
+  price         Float
+  comparePrice  Float? // İndirimli fiyat için karşılaştırma
+  cost          Float? // Maliyet
+
+  // Stok
+  sku           String?  @unique
+  barcode       String?  @unique // EAN-13
+  stock         Int      @default(0)
+  lowStockAlert Int      @default(5)
+  trackStock    Boolean  @default(true)
+
+  // Fiziksel özellikler
+  weight        Float? // kg
+  width         Float? // cm
+  height        Float? // cm
+  length        Float? // cm
+
+  // İlişkiler
+  categoryId    Int?
+  brandId       Int?
+
+  // Durumlar
+  isActive      Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
+  isNew         Boolean  @default(false)
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category    Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brand       Brand?             @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  images      ProductImage[]
+  videos      ProductVideo[]
+  attributes  ProductAttribute[]
+  variants    ProductVariant[]
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  favorites   Favorite[]
+  reviews     Review[]
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([barcode])
+  @@index([isActive, isFeatured])
+  @@map("products")
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  url       String
+  alt       String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model ProductVideo {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  url       String
+  thumbnail String?
+  title     String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_videos")
+}
+
+model ProductAttribute {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  key       String   // Renk, Beden, Malzeme, vb.
+  value     String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_attributes")
+}
+
+model ProductVariant {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  name      String   // Örn: "Kırmızı - L"
+  sku       String?  @unique
+  barcode   String?  @unique
+  price     Float?
+  stock     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems CartItem[]
+  orderItems OrderItem[]
+
+  @@map("product_variants")
+}
+
+// ============================================
+// FAVORİLER
+// ============================================
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  productId Int
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("favorites")
+}
+
+// ============================================
+// YORUMLAR
+// ============================================
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  productId Int
+  rating    Int      // 1-5
+  title     String?
+  comment   String?
+  isApproved Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+// ============================================
+// SEPET
+// ============================================
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?    @unique
+  sessionId String?    @unique // Misafir kullanıcılar için
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  expiresAt DateTime?
+
+  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  cartId    String
+  productId Int
+  variantId Int?
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart    Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@unique([cartId, productId, variantId])
+  @@map("cart_items")
+}
+
+// ============================================
+// SİPARİŞ
+// ============================================
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  orderNumber     String      @unique
+  userId          String
+  status          OrderStatus @default(PENDING)
+
+  // Fiyatlar (Float for SQLite compatibility)
+  subtotal        Float
+  shippingCost    Float       @default(0)
+  discount        Float       @default(0)
+  tax             Float       @default(0)
+  total           Float
+
+  // Adresler
+  shippingAddressId String?
+  billingAddressId  String?
+
+  // Ödeme
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String?
+
+  // Kargo
+  trackingNumber  String?
+  shippingMethod  String?
+
+  // Kupon
+  couponId        Int?
+  couponCode      String?
+
+  // Notlar
+  customerNote    String?
+  adminNote       String?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user            User                @relation(fields: [userId], references: [id])
+  shippingAddress Address?            @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddress  Address?            @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  coupon          Coupon?             @relation(fields: [couponId], references: [id])
+  items           OrderItem[]
+  statusHistory   OrderStatusHistory[]
+  payment         Payment?
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderNumber])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  variantId   Int?
+  productName String   // Sipariş anındaki ürün adı
+  variantName String?
+  sku         String?
+  quantity    Int
+  price       Float    // Birim fiyat
+  total       Float    // quantity * price
+  createdAt   DateTime @default(now())
+
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id        Int         @id @default(autoincrement())
+  orderId   Int
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_status_history")
+}
+
+enum OrderStatus {
+  PENDING           // Beklemede
+  CONFIRMED         // Onaylandı
+  PROCESSING        // Hazırlanıyor
+  SHIPPED           // Kargoya verildi
+  DELIVERED         // Teslim edildi
+  CANCELLED         // İptal edildi
+  REFUNDED          // İade edildi
+}
+
+enum PaymentStatus {
+  PENDING           // Beklemede
+  PAID              // Ödendi
+  FAILED            // Başarısız
+  REFUNDED          // İade edildi
+}
+
+// ============================================
+// ÖDEME (iyzico)
+// ============================================
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           Int           @unique
+  iyzicoPaymentId   String?
+  iyzicoConversationId String?
+  status            PaymentStatus @default(PENDING)
+  amount            Float
+  currency          String        @default("TRY")
+  installment       Int           @default(1)
+  cardType          String?
+  cardAssociation   String?
+  cardFamily        String?
+  binNumber         String?
+  lastFourDigits    String?
+  errorCode         String?
+  errorMessage      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ============================================
+// KUPON
+// ============================================
+
+model Coupon {
+  id            Int          @id @default(autoincrement())
+  code          String       @unique
+  type          CouponType
+  value         Float        // Yüzde veya sabit tutar
+  minPurchase   Float?       // Minimum sepet tutarı
+  maxDiscount   Float?       // Maksimum indirim tutarı
+  maxUses       Int?         // Toplam kullanım limiti
+  usedCount     Int          @default(0)
+  maxUsesPerUser Int?        // Kullanıcı başına limit
+  validFrom     DateTime
+  validTo       DateTime
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  orders Order[]
+
+  @@map("coupons")
+}
+
+enum CouponType {
+  PERCENTAGE    // Yüzde indirim
+  FIXED         // Sabit tutar
+  FREE_SHIPPING // Ücretsiz kargo
+}
+
+// ============================================
+// BANNER
+// ============================================
+
+model Banner {
+  id        Int            @id @default(autoincrement())
+  title     String
+  subtitle  String?
+  image     String
+  mobileImage String?
+  link      String?
+  buttonText String?
+  position  BannerPosition @default(HERO)
+  order     Int            @default(0)
+  isActive  Boolean        @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@map("banners")
+}
+
+enum BannerPosition {
+  HERO          // Ana sayfa hero
+  SIDEBAR       // Yan bar
+  CATEGORY      // Kategori sayfası
+  PRODUCT       // Ürün sayfası
+  POPUP         // Popup
+}
+
+// ============================================
+// SAYFALAR (CMS)
+// ============================================
+
+model Page {
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  content     String
+  metaTitle   String?
+  metaDescription String?
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("pages")
+}
+
+// ============================================
+// AYARLAR
+// ============================================
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  type      String   @default("string") // string, number, boolean, json
+  group     String   @default("general") // general, payment, shipping, seo
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// ============================================
+// AKTİVİTE LOGU
+// ============================================
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  userId     String?
+  action     String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entity     String   // Product, Order, User, etc.
+  entityId   String?
+  oldValues  String?  // JSON string for SQLite
+  newValues  String?  // JSON string for SQLite
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@map("activity_logs")
+}

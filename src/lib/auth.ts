@@ -1,21 +1,43 @@
 import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { admin } from "better-auth/plugins";
+import prisma from "./prisma";
 
 export const auth = betterAuth({
-  // Database yapılandırması - Prisma, Drizzle veya doğrudan veritabanı bağlantısı kullanabilirsiniz
-  // Örnek Prisma kullanımı:
-  // database: prismaAdapter(prisma, { provider: "postgresql" }),
-
-  // Örnek SQLite kullanımı (geliştirme için):
-  // database: {
-  //   url: "file:./dev.db",
-  //   type: "sqlite",
-  // },
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
 
   emailAndPassword: {
     enabled: true,
     // Email doğrulama (opsiyonel)
     // requireEmailVerification: true,
+  },
+
+  // Session ayarları
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // 7 gün
+    updateAge: 60 * 60 * 24, // 1 günde bir güncelle
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 dakika cache
+    },
+  },
+
+  // Kullanıcı oluşturulduğunda role ata
+  user: {
+    additionalFields: {
+      phone: {
+        type: "string",
+        required: false,
+      },
+      role: {
+        type: "string",
+        defaultValue: "CUSTOMER",
+        input: false,
+      },
+    },
   },
 
   // Sosyal giriş sağlayıcıları (opsiyonel)
@@ -24,14 +46,11 @@ export const auth = betterAuth({
   //     clientId: process.env.GOOGLE_CLIENT_ID!,
   //     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
   //   },
-  //   github: {
-  //     clientId: process.env.GITHUB_CLIENT_ID!,
-  //     clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-  //   },
   // },
 
   plugins: [
     nextCookies(), // Server actions için cookie desteği
+    admin(), // Admin plugin for role-based access
   ],
 });
 

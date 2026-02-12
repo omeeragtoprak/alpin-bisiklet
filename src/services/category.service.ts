@@ -15,13 +15,12 @@ import { apiClient } from "./api-client";
  * Tüm kategori CRUD işlemleri bu servis üzerinden yapılır
  */
 export const categoryService = {
-  /**
-   * Kategori listesi getir (sayfalı)
-   */
   getAll: async (params: ListParams = {}) => {
-    return apiClient.get<PaginatedResponse<CategoryListItem>>(API_ENDPOINTS.CATEGORIES, {
+    // The API returns { data: Category[] } wrapping
+    const response = await apiClient.get<{ data: Category[] }>(API_ENDPOINTS.CATEGORIES, {
       params: params as Record<string, string | number | boolean | undefined>,
     });
+    return response.data;
   },
 
   /**

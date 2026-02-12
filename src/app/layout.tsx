@@ -16,9 +16,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { Toaster } from "@/components/ui/toaster";
+
 export const metadata: Metadata = {
-  title: "Alpin Bisiklet - Admin Panel",
-  description: "Alpin Bisiklet yönetim paneli",
+  title: "Alpin Bisiklet",
+  description: "Alpin Bisiklet E-Ticaret Sistemi",
 };
 
 export default function RootLayout({
@@ -27,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className={inter.variable} suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="tr" suppressHydrationWarning>
+      <body className={inter.className}>
         <Providers>
           <ThemeProvider
             attribute="class"
@@ -37,6 +39,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
+            <Toaster />
           </ThemeProvider>
         </Providers>
       </body>

@@ -4,3 +4,4 @@ export * from "./api.types";
 // Domain Types
 export * from "./category.types";
 export * from "./product.types";
+export * from "./banner.types";
