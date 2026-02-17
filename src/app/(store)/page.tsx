@@ -7,7 +7,10 @@ import { motion } from "motion/react";
 import { ParallaxHero } from "@/components/store/home/parallax-hero";
 import { FeaturedCategories } from "@/components/store/home/featured-categories";
 import { ProductShowcase } from "@/components/store/home/product-showcase";
+import { NewProductsSection } from "@/components/store/home/new-products-section";
 import { BrandMarquee } from "@/components/store/home/brand-marquee";
+import { DiscountedProductsSection } from "@/components/store/home/discounted-products-section";
+import { PopularProductsSection } from "@/components/store/home/popular-products-section";
 
 const features = [
   {
@@ -81,8 +84,17 @@ export default function StorePage() {
       {/* Product Showcase — horizontal scroll */}
       <ProductShowcase />
 
+      {/* New Products Grid */}
+      <NewProductsSection />
+
       {/* Brand Marquee */}
       <BrandMarquee />
+
+      {/* Discounted Products Carousel */}
+      <DiscountedProductsSection />
+
+      {/* Popular Products Grid */}
+      <PopularProductsSection />
 
       {/* Stats Section */}
       <section className="py-20">

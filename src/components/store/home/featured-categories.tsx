@@ -51,10 +51,10 @@ export function FeaturedCategories() {
     const smallItems = categories.slice(2);
 
     return (
-        <section className="py-20">
+        <section className="py-12">
             <div className="container mx-auto px-4">
                 {/* Section header */}
-                <div className="text-center mb-12">
+                <div className="text-center mb-8">
                     <motion.span
                         initial={{ opacity: 0, y: 10 }}
                         whileInView={{ opacity: 1, y: 0 }}

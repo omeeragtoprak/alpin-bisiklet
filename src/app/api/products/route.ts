@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
 		const brandId = searchParams.get("brandId");
 		const isActive = searchParams.get("isActive");
 		const isFeatured = searchParams.get("isFeatured");
+		const isNew = searchParams.get("isNew");
+		const hasDiscount = searchParams.get("hasDiscount");
+		const orderBy = searchParams.get("orderBy");
 
 		const skip = (page - 1) * limit;
 
@@ -33,6 +36,15 @@ export async function GET(request: NextRequest) {
 		if (brandId) where.brandId = Number(brandId);
 		if (isActive !== null) where.isActive = isActive === "true";
 		if (isFeatured !== null) where.isFeatured = isFeatured === "true";
+		if (isNew !== null) where.isNew = isNew === "true";
+		if (hasDiscount === "true") where.comparePrice = { not: null };
+
+		// Determine ordering
+		let orderByClause: any = { createdAt: "desc" };
+		if (orderBy === "price_asc") orderByClause = { price: "asc" };
+		else if (orderBy === "price_desc") orderByClause = { price: "desc" };
+		else if (orderBy === "name_asc") orderByClause = { name: "asc" };
+		else if (orderBy === "newest") orderByClause = { createdAt: "desc" };
 
 		const [products, total] = await Promise.all([
 			prisma.product.findMany({
@@ -45,7 +57,7 @@ export async function GET(request: NextRequest) {
 				},
 				skip,
 				take: limit,
-				orderBy: { createdAt: "desc" },
+				orderBy: orderByClause,
 			}),
 			prisma.product.count({ where }),
 		]);

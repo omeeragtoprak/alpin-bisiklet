@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "biome lint ./src",
     "format": "biome format ./src --write",
-    "check": "biome check ./src --write"
+    "check": "biome check ./src --write",
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
@@ -53,7 +54,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "2.0.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",

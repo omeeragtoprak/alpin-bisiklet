@@ -56,8 +56,11 @@ export interface ProductFilters {
   categoryId?: number;
   brandId?: number;
   isActive?: boolean;
-  isFeatured?: boolean; // Added isFeatured
+  isFeatured?: boolean;
+  isNew?: boolean;
+  hasDiscount?: boolean;
+  orderBy?: "price_asc" | "price_desc" | "name_asc" | "newest";
   minPrice?: number;
   maxPrice?: number;
-  take?: number; // Added for convenience in service
+  take?: number;
 }

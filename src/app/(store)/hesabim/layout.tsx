@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { User, Package, MapPin, Heart, Settings } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { SignOutButton } from "./sign-out-button";
 
 export default async function AccountLayout({
 	children,
@@ -53,14 +54,9 @@ export default async function AccountLayout({
 						))}
 					</nav>
 
-					<form action="/api/auth/sign-out" method="POST" className="mt-4">
-						<button
-							type="submit"
-							className="w-full text-left px-4 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-						>
-							Çıkış Yap
-						</button>
-					</form>
+					<div className="mt-4">
+						<SignOutButton />
+					</div>
 				</aside>
 
 				{/* Main Content */}
