@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingCart, Eye } from "lucide-react";
+import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductListItem } from "@/types";
 import { useCartStore } from "@/store/use-cart-store";
@@ -30,6 +30,15 @@ export function ProductCard({ product }: ProductCardProps) {
 		toast({
 			title: "Sepete Eklendi",
 			description: `${product.name} sepetinize eklendi.`,
+		});
+	};
+
+	const handleFavorite = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		toast({
+			title: "Favorilere Eklendi",
+			description: `${product.name} favorilerinize eklendi.`,
 		});
 	};
 
@@ -70,17 +79,15 @@ export function ProductCard({ product }: ProductCardProps) {
 					)}
 				</div>
 
-				{/* Quick actions */}
+				{/* Favorite button - appears on hover */}
 				<div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 z-10">
 					<Button
 						size="icon"
 						variant="secondary"
-						className="h-9 w-9 rounded-full shadow-lg backdrop-blur-sm bg-background/80"
-						asChild
+						className="h-9 w-9 rounded-full shadow-lg backdrop-blur-sm bg-background/80 hover:text-destructive"
+						onClick={handleFavorite}
 					>
-						<Link href={`/urunler/${product.slug}`}>
-							<Eye className="h-4 w-4" />
-						</Link>
+						<Heart className="h-4 w-4" />
 					</Button>
 				</div>
 			</div>
@@ -108,7 +115,8 @@ export function ProductCard({ product }: ProductCardProps) {
 						)}
 					</div>
 					<Button
-						className="w-full rounded-xl h-11 font-semibold opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
+						className="w-full rounded-xl h-10 text-sm font-semibold hover:brightness-75 transition-all"
+						variant="default"
 						disabled={product.stock <= 0}
 						onClick={handleAddToCart}
 					>

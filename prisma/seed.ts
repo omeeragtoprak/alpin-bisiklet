@@ -63,13 +63,13 @@ async function main() {
 	// ==========================================
 	const parentCategories = await Promise.all(
 		[
-			{ name: "Dağ Bisikleti", description: "Off-road ve arazi bisikletleri", order: 1, image: "https://picsum.photos/seed/cat-mountain/800/600" },
-			{ name: "Yol Bisikleti", description: "Asfalt ve uzun mesafe bisikletleri", order: 2, image: "https://picsum.photos/seed/cat-road/800/600" },
-			{ name: "Şehir Bisikleti", description: "Günlük ulaşım ve şehir içi bisikletler", order: 3, image: "https://picsum.photos/seed/cat-city/800/600" },
-			{ name: "Elektrikli Bisiklet", description: "Motor destekli elektrikli bisikletler", order: 4, image: "https://picsum.photos/seed/cat-electric/800/600" },
-			{ name: "Çocuk Bisikleti", description: "Çocuklar için güvenli bisikletler", order: 5, image: "https://picsum.photos/seed/cat-kids/800/600" },
-			{ name: "Aksesuar", description: "Bisiklet aksesuarları ve ekipmanları", order: 6, image: "https://picsum.photos/seed/cat-accessory/800/600" },
-			{ name: "Yedek Parça", description: "Bisiklet yedek parçaları ve bileşenleri", order: 7, image: "https://picsum.photos/seed/cat-parts/800/600" },
+			{ name: "Dağ Bisikleti", description: "Off-road ve arazi bisikletleri", order: 1, image: "https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=800&h=600&fit=crop&q=80" },
+			{ name: "Yol Bisikleti", description: "Asfalt ve uzun mesafe bisikletleri", order: 2, image: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800&h=600&fit=crop&q=80" },
+			{ name: "Şehir Bisikleti", description: "Günlük ulaşım ve şehir içi bisikletler", order: 3, image: "https://images.unsplash.com/photo-1560264280-88b68371db39?w=800&h=600&fit=crop&q=80" },
+			{ name: "Elektrikli Bisiklet", description: "Motor destekli elektrikli bisikletler", order: 4, image: "https://images.unsplash.com/photo-1593764592116-bfb2a97c642a?w=800&h=600&fit=crop&q=80" },
+			{ name: "Çocuk Bisikleti", description: "Çocuklar için güvenli bisikletler", order: 5, image: "https://images.unsplash.com/photo-1502744688674-c619d1586c9e?w=800&h=600&fit=crop&q=80" },
+			{ name: "Aksesuar", description: "Bisiklet aksesuarları ve ekipmanları", order: 6, image: "https://images.unsplash.com/photo-1484920274317-87885fcbc504?w=800&h=600&fit=crop&q=80" },
+			{ name: "Yedek Parça", description: "Bisiklet yedek parçaları ve bileşenleri", order: 7, image: "https://images.unsplash.com/photo-1571188654248-7a89213915f7?w=800&h=600&fit=crop&q=80" },
 		].map((c) =>
 			prisma.category.create({
 				data: { ...c, slug: slugify(c.name), isActive: true },
@@ -609,10 +609,107 @@ async function main() {
 		},
 	];
 
-	// Create products with images
-	let imageId = 100; // Starting picsum ID
+	// Unsplash image map — verified bicycle/cycling photos grouped by category theme
+	const unsplashImages: Record<string, string[]> = {
+		// Mountain bikes — trail, dirt, off-road cycling
+		mtb: [
+			"photo-1576435728678-68d0fbf94e91", // mountain biker on trail
+			"photo-1544191696-102dbdaeeaa0", // MTB action
+			"photo-1597076545399-91a3ff0e71b3", // mountain bike close
+			"photo-1541625602330-2277a4c46182", // cyclist on mountain
+			"photo-1599058917212-d750089bc07e", // dirt trail riding
+			"photo-1517649763962-0c623066013b", // cycling race
+			"photo-1507035895480-2b3156c31fc8", // bike on trail
+			"photo-1630734277837-ebe62757b6e0", // mountain landscape bike
+		],
+		// Road bikes — road cycling, racing
+		road: [
+			"photo-1485965120184-e220f721d03e", // road bike parked
+			"photo-1532298229144-0ec0c57515c7", // road cycling
+			"photo-1571068316344-75bc76f77890", // road cyclist
+			"photo-1502744688674-c619d1586c9e", // racing bike
+			"photo-1571188654248-7a89213915f7", // road bike detail
+			"photo-1596464716127-f2a82984de30", // cycling group
+			"photo-1574236170878-f66e35f83207", // bike road
+		],
+		// City/urban bikes
+		city: [
+			"photo-1560264280-88b68371db39", // city bike parked
+			"photo-1511994477422-b69e44bd4ea9", // urban cycling
+			"photo-1558383331-f520f2888351", // city street bike
+			"photo-1534787238916-9ba6764efd4f", // commuter bike
+			"photo-1584592740039-cddf0671f3d4", // bicycle in city
+			"photo-1583467875263-d50dec37a88c", // urban bike scene
+		],
+		// E-bikes
+		ebike: [
+			"photo-1593764592116-bfb2a97c642a", // e-bike
+			"photo-1614735241165-6756e1df61ab", // electric bike
+			"photo-1504280390367-361c6d9f38f4", // modern bike
+			"photo-1528629297340-d1d466945dc5", // bike tech
+			"photo-1484920274317-87885fcbc504", // bike components
+			"photo-1593764592116-bfb2a97c642a", // e-bike ride
+		],
+		// Kids bikes
+		kids: [
+			"photo-1502744688674-c619d1586c9e", // colorful bike
+			"photo-1558383331-f520f2888351", // small bike
+			"photo-1534787238916-9ba6764efd4f", // bike park
+			"photo-1511994477422-b69e44bd4ea9", // fun bike ride
+			"photo-1583467875263-d50dec37a88c", // bike scene
+		],
+		// Accessories (helmets, lights, gear)
+		accessory: [
+			"photo-1484920274317-87885fcbc504", // bike gear
+			"photo-1528629297340-d1d466945dc5", // cycling equipment
+			"photo-1574236170878-f66e35f83207", // bike accessories
+			"photo-1596464716127-f2a82984de30", // cycling setup
+		],
+		// Spare parts
+		parts: [
+			"photo-1484920274317-87885fcbc504", // bike components
+			"photo-1571188654248-7a89213915f7", // bike detail
+			"photo-1528629297340-d1d466945dc5", // mechanical parts
+			"photo-1574236170878-f66e35f83207", // bike parts close
+			"photo-1596464716127-f2a82984de30", // components
+		],
+	};
+
+	function unsplashUrl(photoId: string, w = 800, h = 800): string {
+		return `https://images.unsplash.com/${photoId}?w=${w}&h=${h}&fit=crop&q=80`;
+	}
+
+	// Map category IDs to image pools
+	const categoryImagePool: Record<number, string[]> = {
+		[catMap["Dağ Bisikleti"]]: unsplashImages.mtb,
+		[subCatMap["Cross Country"]]: unsplashImages.mtb,
+		[subCatMap["Trail"]]: unsplashImages.mtb,
+		[subCatMap["Enduro"]]: unsplashImages.mtb,
+		[catMap["Yol Bisikleti"]]: unsplashImages.road,
+		[catMap["Şehir Bisikleti"]]: unsplashImages.city,
+		[catMap["Elektrikli Bisiklet"]]: unsplashImages.ebike,
+		[catMap["Çocuk Bisikleti"]]: unsplashImages.kids,
+		[catMap["Aksesuar"]]: unsplashImages.accessory,
+		[subCatMap["Kask"]]: unsplashImages.accessory,
+		[subCatMap["Aydınlatma"]]: unsplashImages.accessory,
+		[catMap["Yedek Parça"]]: unsplashImages.parts,
+	};
+
+	// Track usage per pool to cycle through images
+	const poolCounters: Record<number, number> = {};
+
+	// Create products with category-appropriate images
 	for (const productData of products) {
 		const { sku, ...rest } = productData;
+		const catId = rest.categoryId!;
+		const pool = categoryImagePool[catId] || unsplashImages.mtb;
+
+		if (!(catId in poolCounters)) poolCounters[catId] = 0;
+		const idx = poolCounters[catId];
+		const img1 = pool[idx % pool.length];
+		const img2 = pool[(idx + 1) % pool.length];
+		poolCounters[catId] = idx + 2;
+
 		const product = await prisma.product.create({
 			data: {
 				...rest,
@@ -622,12 +719,12 @@ async function main() {
 				images: {
 					create: [
 						{
-							url: `https://picsum.photos/seed/${imageId}/800/800`,
+							url: unsplashUrl(img1),
 							alt: rest.name,
 							order: 0,
 						},
 						{
-							url: `https://picsum.photos/seed/${imageId + 1}/800/800`,
+							url: unsplashUrl(img2),
 							alt: `${rest.name} - alternatif görünüm`,
 							order: 1,
 						},
@@ -635,7 +732,6 @@ async function main() {
 				},
 			},
 		});
-		imageId += 2;
 		console.log(`  Created product: ${product.name}`);
 	}
 
