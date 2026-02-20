@@ -1,4 +1,6 @@
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "";
+// Client-side'da relative URL kullan (CSP sorununu önler)
+// Server-side'da absolute URL kullan (fetch için gerekli)
+const BASE_URL = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_APP_URL || "");
 
 export const API_ENDPOINTS = {
   // Products
