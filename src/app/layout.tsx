@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/providers";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
@@ -38,8 +39,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
-            <Toaster />
+            <TooltipProvider delayDuration={0}>
+              {children}
+              <Toaster />
+            </TooltipProvider>
           </ThemeProvider>
         </Providers>
       </body>

@@ -13,11 +13,14 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { StatsCard } from "@/components/admin/dashboard/stats-card";
 import { RecentOrders } from "@/components/admin/dashboard/recent-orders";
 import { StockAlert } from "@/components/admin/dashboard/stock-alert";
-import { StatsSkeleton, CardSkeleton } from "@/components/admin/loading-skeleton";
-import { PageHeader } from "@/components/admin/page-header";
+import {
+  StatsSkeleton,
+  CardSkeleton,
+} from "@/components/admin/loading-skeleton";
 import { EmptyState } from "@/components/admin/empty-state";
 
 async function getDashboard() {
@@ -45,13 +48,10 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <PageHeader title="Dashboard" description="Magazanizin genel durumu" />
-        <EmptyState
-          title="Veriler yuklenemedi"
-          description={(error as Error).message}
-        />
-      </div>
+      <EmptyState
+        title="Veriler yuklenemedi"
+        description={(error as Error).message}
+      />
     );
   }
 
@@ -61,7 +61,9 @@ export default function AdminDashboard() {
           name: "Aylik Gelir",
           value: `${Number(data.stats.totalRevenue).toLocaleString("tr-TR")} TL`,
           change: data.stats.revenueChange,
-          trend: data.stats.revenueChange.startsWith("-") ? ("down" as const) : ("up" as const),
+          trend: data.stats.revenueChange.startsWith("-")
+            ? ("down" as const)
+            : ("up" as const),
           icon: DollarSign,
           color: "text-green-600",
           bgColor: "bg-green-100",
@@ -71,7 +73,9 @@ export default function AdminDashboard() {
           name: "Siparisler",
           value: String(data.stats.monthlyOrders),
           change: data.stats.orderChange,
-          trend: data.stats.orderChange.startsWith("-") ? ("down" as const) : ("up" as const),
+          trend: data.stats.orderChange.startsWith("-")
+            ? ("down" as const)
+            : ("up" as const),
           icon: ShoppingCart,
           color: "text-blue-600",
           bgColor: "bg-blue-100",
@@ -104,17 +108,13 @@ export default function AdminDashboard() {
     (o: { id: string; customer: string; total: string; status: string }) => ({
       ...o,
       statusLabel: statusLabels[o.status]?.label || o.status,
-      statusColor: statusLabels[o.status]?.color || "bg-gray-100 text-gray-800",
+      statusColor:
+        statusLabels[o.status]?.color || "bg-gray-100 text-gray-800",
     }),
   );
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Dashboard"
-        description="Magazanizin genel durumuna goz atin"
-      />
-
+    <div className="flex flex-col gap-4">
       {/* Stats Grid */}
       {isLoading ? (
         <StatsSkeleton />
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
               key={stat.name}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
             >
               <Link href={stat.href}>
                 <StatsCard {...stat} />
@@ -137,18 +137,18 @@ export default function AdminDashboard() {
 
       {/* Main Content Grid */}
       {isLoading ? (
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
             <CardSkeleton />
           </div>
           <CardSkeleton />
         </div>
       ) : (
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
             className="lg:col-span-2"
           >
             <RecentOrders orders={recentOrders} />
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.5 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
           >
             <StockAlert products={data?.lowStockProducts || []} />
           </motion.div>
@@ -168,21 +168,24 @@ export default function AdminDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.6 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
       >
         <Card>
-          <CardHeader>
-            <CardTitle>Hizli Islemler</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">
+              Hizli Islemler
+            </CardTitle>
+            <Separator />
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Button variant="outline" className="h-auto py-4" asChild>
                 <Link
                   href="/admin/urunler/yeni"
                   className="flex flex-col items-center gap-2"
                 >
-                  <Package className="h-6 w-6" />
-                  <span className="text-sm">Yeni Urun</span>
+                  <Package className="h-5 w-5" />
+                  <span className="text-xs">Yeni Urun</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-auto py-4" asChild>
@@ -190,8 +193,8 @@ export default function AdminDashboard() {
                   href="/admin/siparisler"
                   className="flex flex-col items-center gap-2"
                 >
-                  <ShoppingCart className="h-6 w-6" />
-                  <span className="text-sm">Siparisler</span>
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="text-xs">Siparisler</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-auto py-4" asChild>
@@ -199,8 +202,8 @@ export default function AdminDashboard() {
                   href="/admin/barkod"
                   className="flex flex-col items-center gap-2"
                 >
-                  <Box className="h-6 w-6" />
-                  <span className="text-sm">Barkod Tara</span>
+                  <Box className="h-5 w-5" />
+                  <span className="text-xs">Barkod Tara</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-auto py-4" asChild>
@@ -208,8 +211,8 @@ export default function AdminDashboard() {
                   href="/admin/raporlar"
                   className="flex flex-col items-center gap-2"
                 >
-                  <TrendingUp className="h-6 w-6" />
-                  <span className="text-sm">Raporlar</span>
+                  <TrendingUp className="h-5 w-5" />
+                  <span className="text-xs">Raporlar</span>
                 </Link>
               </Button>
             </div>

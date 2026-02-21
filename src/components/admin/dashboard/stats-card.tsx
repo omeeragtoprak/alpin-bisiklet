@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, type LucideIcon } from "lucide-react";
 
 interface StatsCardProps {
@@ -17,32 +17,28 @@ export function StatsCard({
   change,
   trend,
   icon: Icon,
-  color,
-  bgColor,
 }: StatsCardProps) {
   return (
-    <Card className="transition-shadow hover:shadow-md cursor-pointer">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className={`p-2 rounded-lg ${bgColor}`}>
-            <Icon className={`h-5 w-5 ${color}`} />
-          </div>
-          <div
-            className={`flex items-center gap-1 text-sm ${
-              trend === "up" ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {trend === "up" ? (
-              <TrendingUp className="h-4 w-4" />
-            ) : (
-              <TrendingDown className="h-4 w-4" />
-            )}
-            <span className="text-xs">{change}</span>
-          </div>
-        </div>
-        <div className="mt-4">
-          <p className="text-2xl font-bold">{value}</p>
-          <p className="text-sm text-muted-foreground">{name}</p>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {name}
+        </CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <div
+          className={`flex items-center gap-1 mt-1 text-xs ${
+            trend === "up" ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {trend === "up" ? (
+            <TrendingUp className="h-3 w-3" />
+          ) : (
+            <TrendingDown className="h-3 w-3" />
+          )}
+          <span>{change}</span>
         </div>
       </CardContent>
     </Card>

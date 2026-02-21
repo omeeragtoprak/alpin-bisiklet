@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { CommandPalette } from "@/components/admin/command-palette";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 import "./admin.css";
 
@@ -30,15 +31,17 @@ export default async function AdminLayout({
 	}
 
 	return (
-		<div data-admin="" className="flex h-screen overflow-hidden bg-background">
-			<AdminSidebar />
-			<div className="flex flex-1 flex-col overflow-hidden">
-				<AdminHeader />
-				<main className="flex-1 overflow-y-auto p-4 md:p-6">
-					{children}
-				</main>
-				<CommandPalette />
-			</div>
+		<div data-admin="">
+			<SidebarProvider>
+				<AdminSidebar />
+				<SidebarInset>
+					<AdminHeader />
+					<main className="flex flex-1 flex-col gap-4 p-4 md:p-6 pt-4">
+						{children}
+					</main>
+					<CommandPalette />
+				</SidebarInset>
+			</SidebarProvider>
 		</div>
 	);
 }

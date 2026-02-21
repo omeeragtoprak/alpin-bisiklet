@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 const navigation = [
   { name: "Ana Sayfa", href: "/" },
@@ -229,6 +230,8 @@ export function StoreHeader() {
             >
               <Heart className="h-5 w-5" />
             </Link>
+
+            <AnimatedThemeToggler className="p-2.5 flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-muted/50 rounded-xl transition-colors" />
 
             {session ? (
               <DropdownMenu>
