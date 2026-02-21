@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/tabs";
 import { useCartStore } from "@/store/use-cart-store";
 import { useToast } from "@/hooks/use-toast";
+import { SimilarProducts } from "@/components/store/product/similar-products";
+import { ComplementaryProducts } from "@/components/store/product/complementary-products";
 
 export default function ProductDetailPage() {
 	const params = useParams();
@@ -538,6 +540,17 @@ export default function ProductDetailPage() {
 					</TabsContent>
 				)}
 			</Tabs>
+
+			{/* Benzer Ürünler */}
+			{product && (
+				<SimilarProducts
+					productId={product.id}
+					categoryName={product.category?.name}
+				/>
+			)}
+
+			{/* İlginizi Çekebilir */}
+			{product && <ComplementaryProducts productId={product.id} />}
 		</div>
 	);
 }
