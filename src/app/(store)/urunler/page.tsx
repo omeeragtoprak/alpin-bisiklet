@@ -58,11 +58,15 @@ function FilterSidebar({
 	setFilters,
 	categories,
 	brands,
+	categoriesLoading,
+	brandsLoading,
 }: {
 	filters: FilterState;
 	setFilters: (f: Partial<FilterState>) => void;
 	categories: any[];
 	brands: any[];
+	categoriesLoading?: boolean;
+	brandsLoading?: boolean;
 }) {
 	return (
 		<div className="space-y-1">
@@ -77,39 +81,47 @@ function FilterSidebar({
 						Kategoriler
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="space-y-2">
-							<button
-								type="button"
-								onClick={() => setFilters({ categoryId: "" })}
-								className={`text-sm w-full text-left px-2 py-1 rounded hover:bg-muted transition-colors ${!filters.categoryId
-										? "text-primary font-medium"
-										: "text-muted-foreground"
-									}`}
-							>
-								Tümü
-							</button>
-							{categories.map((cat: any) => (
+						{categoriesLoading ? (
+							<div className="space-y-2 py-1">
+								{[1, 2, 3, 4].map((i) => (
+									<div key={i} className="h-7 bg-muted animate-pulse rounded" />
+								))}
+							</div>
+						) : (
+							<div className="space-y-2">
 								<button
-									key={cat.id}
 									type="button"
-									onClick={() =>
-										setFilters({
-											categoryId: cat.id.toString(),
-										})
-									}
-									className={`text-sm w-full text-left px-2 py-1 rounded hover:bg-muted transition-colors flex justify-between ${filters.categoryId ===
-											cat.id.toString()
-											? "text-primary font-medium bg-primary/5"
+									onClick={() => setFilters({ categoryId: "" })}
+									className={`text-sm w-full text-left px-2 py-1 rounded hover:bg-muted transition-colors ${!filters.categoryId
+											? "text-primary font-medium"
 											: "text-muted-foreground"
 										}`}
 								>
-									<span>{cat.name}</span>
-									<span className="text-xs opacity-60">
-										{cat._count?.products || 0}
-									</span>
+									Tümü
 								</button>
-							))}
-						</div>
+								{categories.map((cat: any) => (
+									<button
+										key={cat.id}
+										type="button"
+										onClick={() =>
+											setFilters({
+												categoryId: cat.id.toString(),
+											})
+										}
+										className={`text-sm w-full text-left px-2 py-1 rounded hover:bg-muted transition-colors flex justify-between ${filters.categoryId ===
+												cat.id.toString()
+												? "text-primary font-medium bg-primary/5"
+												: "text-muted-foreground"
+											}`}
+									>
+										<span>{cat.name}</span>
+										<span className="text-xs opacity-60">
+											{cat._count?.products || 0}
+										</span>
+									</button>
+								))}
+							</div>
+						)}
 					</AccordionContent>
 				</AccordionItem>
 
@@ -119,39 +131,52 @@ function FilterSidebar({
 						Markalar
 					</AccordionTrigger>
 					<AccordionContent>
-						<div className="space-y-2">
-							<button
-								type="button"
-								onClick={() => setFilters({ brandId: "" })}
-								className={`text-sm w-full text-left px-2 py-1 rounded hover:bg-muted transition-colors ${!filters.brandId
-										? "text-primary font-medium"
-										: "text-muted-foreground"
-									}`}
-							>
-								Tümü
-							</button>
-							{brands.map((brand: any) => (
+						{brandsLoading ? (
+							<div className="space-y-2 py-1">
+								{[1, 2, 3].map((i) => (
+									<div key={i} className="h-7 bg-muted animate-pulse rounded" />
+								))}
+							</div>
+						) : (
+							<div className="space-y-2">
 								<button
-									key={brand.id}
 									type="button"
-									onClick={() =>
-										setFilters({
-											brandId: brand.id.toString(),
-										})
-									}
-									className={`text-sm w-full text-left px-2 py-1 rounded hover:bg-muted transition-colors flex justify-between ${filters.brandId ===
-											brand.id.toString()
-											? "text-primary font-medium bg-primary/5"
+									onClick={() => setFilters({ brandId: "" })}
+									className={`text-sm w-full text-left px-2 py-1 rounded hover:bg-muted transition-colors ${!filters.brandId
+											? "text-primary font-medium"
 											: "text-muted-foreground"
 										}`}
 								>
-									<span>{brand.name}</span>
-									<span className="text-xs opacity-60">
-										{brand._count?.products || 0}
-									</span>
+									Tümü
 								</button>
-							))}
-						</div>
+								{brands.map((brand: any) => (
+									<button
+										key={brand.id}
+										type="button"
+										onClick={() =>
+											setFilters({
+												brandId: brand.id.toString(),
+											})
+										}
+										className={`text-sm w-full text-left px-2 py-1 rounded hover:bg-muted transition-colors flex justify-between ${filters.brandId ===
+												brand.id.toString()
+												? "text-primary font-medium bg-primary/5"
+												: "text-muted-foreground"
+											}`}
+									>
+										<span>{brand.name}</span>
+										<span className="text-xs opacity-60">
+											{brand._count?.products || 0}
+										</span>
+									</button>
+								))}
+								{!brandsLoading && brands.length === 0 && (
+									<p className="text-xs text-muted-foreground px-2">
+										Bu kategoride marka bulunamadı.
+									</p>
+								)}
+							</div>
+						)}
 					</AccordionContent>
 				</AccordionItem>
 
@@ -245,23 +270,28 @@ export default function ProductsPage() {
 	}, []);
 
 	// Fetch categories
-	const { data: categoriesData } = useQuery({
+	const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
 		queryKey: ["store-categories"],
 		queryFn: async () => {
 			const res = await fetch("/api/categories");
+			if (!res.ok) throw new Error("Kategoriler yüklenemedi");
 			const json = await res.json();
 			return json.data || [];
 		},
 	});
 
-	// Fetch brands
-	const { data: brandsData } = useQuery({
-		queryKey: ["store-brands"],
+	// Fetch brands — seçili kategorideki ürünlerin markaları göster
+	const { data: brandsData, isLoading: brandsLoading } = useQuery({
+		queryKey: ["store-brands", filters.categoryId],
 		queryFn: async () => {
-			const res = await fetch("/api/brands");
+			const url = filters.categoryId
+				? `/api/brands?categoryId=${filters.categoryId}`
+				: "/api/brands";
+			const res = await fetch(url);
 			const json = await res.json();
 			return json.data || [];
 		},
+		staleTime: 60 * 1000,
 	});
 
 	// Fetch products
@@ -316,7 +346,7 @@ export default function ProductsPage() {
 			<div className="flex gap-8">
 				{/* Desktop Sidebar */}
 				<aside className="hidden lg:block w-64 shrink-0">
-					<div className="sticky top-24 space-y-4">
+					<div className="sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4 pr-1">
 						<div className="flex items-center justify-between">
 							<h2 className="font-semibold flex items-center gap-2">
 								<SlidersHorizontal className="h-4 w-4" />
@@ -339,6 +369,8 @@ export default function ProductsPage() {
 							setFilters={setFilters}
 							categories={categoriesData || []}
 							brands={brandsData || []}
+							categoriesLoading={categoriesLoading}
+							brandsLoading={brandsLoading}
 						/>
 					</div>
 				</aside>
@@ -386,6 +418,7 @@ export default function ProductsPage() {
 											setFilters={setFilters}
 											categories={categoriesData || []}
 											brands={brandsData || []}
+											categoriesLoading={categoriesLoading}
 										/>
 									</div>
 								</SheetContent>

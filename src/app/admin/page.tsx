@@ -25,18 +25,18 @@ import { EmptyState } from "@/components/admin/empty-state";
 
 async function getDashboard() {
   const res = await fetch("/api/admin/dashboard");
-  if (!res.ok) throw new Error("Dashboard verileri alinamadi");
+  if (!res.ok) throw new Error("Dashboard verileri alınamadı");
   const json = await res.json();
   return json.data;
 }
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   PENDING: { label: "Beklemede", color: "bg-gray-100 text-gray-800" },
-  CONFIRMED: { label: "Onaylandi", color: "bg-purple-100 text-purple-800" },
-  PROCESSING: { label: "Hazirlaniyor", color: "bg-yellow-100 text-yellow-800" },
+  CONFIRMED: { label: "Onaylandı", color: "bg-purple-100 text-purple-800" },
+  PROCESSING: { label: "Hazırlanıyor", color: "bg-yellow-100 text-yellow-800" },
   SHIPPED: { label: "Kargoda", color: "bg-blue-100 text-blue-800" },
   DELIVERED: { label: "Teslim Edildi", color: "bg-green-100 text-green-800" },
-  CANCELLED: { label: "Iptal", color: "bg-red-100 text-red-800" },
+  CANCELLED: { label: "İptal", color: "bg-red-100 text-red-800" },
 };
 
 export default function AdminDashboard() {
@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   if (error) {
     return (
       <EmptyState
-        title="Veriler yuklenemedi"
+        title="Veriler yüklenemedi"
         description={(error as Error).message}
       />
     );
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
   const stats = data
     ? [
         {
-          name: "Aylik Gelir",
+          name: "Aylık Gelir",
           value: `${Number(data.stats.totalRevenue).toLocaleString("tr-TR")} TL`,
           change: data.stats.revenueChange,
           trend: data.stats.revenueChange.startsWith("-")
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
           href: "/admin/raporlar",
         },
         {
-          name: "Siparisler",
+          name: "Siparişler",
           value: String(data.stats.monthlyOrders),
           change: data.stats.orderChange,
           trend: data.stats.orderChange.startsWith("-")
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
           href: "/admin/siparisler",
         },
         {
-          name: "Musteriler",
+          name: "Müşteriler",
           value: String(data.stats.totalCustomers),
           change: `+${data.stats.monthlyCustomers} bu ay`,
           trend: "up" as const,
@@ -92,9 +92,9 @@ export default function AdminDashboard() {
           href: "/admin/musteriler",
         },
         {
-          name: "Urunler",
+          name: "Ürünler",
           value: `${data.stats.activeProducts}/${data.stats.totalProducts}`,
-          change: `${data.stats.pendingOrders} bekleyen siparis`,
+          change: `${data.stats.pendingOrders} bekleyen sipariş`,
           trend: "up" as const,
           icon: Package,
           color: "text-orange-600",
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">
-              Hizli Islemler
+              Hızlı İşlemler
             </CardTitle>
             <Separator />
           </CardHeader>
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
                   className="flex flex-col items-center gap-2"
                 >
                   <Package className="h-5 w-5" />
-                  <span className="text-xs">Yeni Urun</span>
+                  <span className="text-xs">Yeni Ürün</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-auto py-4" asChild>
@@ -194,7 +194,7 @@ export default function AdminDashboard() {
                   className="flex flex-col items-center gap-2"
                 >
                   <ShoppingCart className="h-5 w-5" />
-                  <span className="text-xs">Siparisler</span>
+                  <span className="text-xs">Siparişler</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-auto py-4" asChild>

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { ArrowUpDown, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table/data-table";
@@ -12,6 +12,13 @@ import { TableSkeleton } from "@/components/admin/loading-skeleton";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { useAdminMutation } from "@/hooks/use-admin-mutation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CategoriesReorder } from "@/components/admin/categories/categories-reorder";
 
 async function getCategories() {
   const res = await fetch("/api/categories");
@@ -21,6 +28,7 @@ async function getCategories() {
 
 export default function CategoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [reorderOpen, setReorderOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["categories"],
@@ -47,7 +55,7 @@ export default function CategoriesPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Kategoriler" description="Urun kategorilerini yonetin" />
+        <PageHeader title="Kategoriler" description="Ürün kategorilerini yönetin" />
         <EmptyState title="Hata" description={(error as Error).message} />
       </div>
     );
@@ -57,7 +65,15 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Kategoriler" description="Urun kategorilerini yonetin">
+      <PageHeader title="Kategoriler" description="Ürün kategorilerini yönetin">
+        <Button
+          variant="outline"
+          onClick={() => setReorderOpen(true)}
+          disabled={categories.length === 0}
+        >
+          <ArrowUpDown className="mr-2 h-4 w-4" />
+          Sıralamayı Düzenle
+        </Button>
         <Button asChild>
           <Link href="/admin/kategoriler/yeni">
             <Plus className="mr-2 h-4 w-4" />
@@ -70,8 +86,8 @@ export default function CategoriesPage() {
         <TableSkeleton />
       ) : categories.length === 0 ? (
         <EmptyState
-          title="Henuz kategori yok"
-          description="Ilk kategorinizi ekleyerek baslayin"
+          title="Henüz kategori yok"
+          description="İlk kategorinizi ekleyerek başlayın"
           actionLabel="Yeni Kategori"
           actionHref="/admin/kategoriler/yeni"
         />
@@ -85,10 +101,22 @@ export default function CategoriesPage() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title="Kategoriyi Sil"
-        description={`"${deleteTarget?.name}" kategorisi kalici olarak silinecek.`}
+        description={`"${deleteTarget?.name}" kategorisi kalıcı olarak silinecek.`}
         loading={deleteMutation.isPending}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
       />
+
+      <Dialog open={reorderOpen} onOpenChange={setReorderOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Kategori Sıralaması</DialogTitle>
+          </DialogHeader>
+          <CategoriesReorder
+            categories={categories}
+            onClose={() => setReorderOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

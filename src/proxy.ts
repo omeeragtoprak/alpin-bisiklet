@@ -29,12 +29,6 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ============================================
-  // x-pathname header — layout'un okuyabilmesi için
-  // ============================================
-  const reqHeaders = new Headers(request.headers);
-  reqHeaders.set("x-pathname", pathname);
-
-  // ============================================
   // Admin rotaları — cookie yoksa /admin/giris
   // ============================================
   if (isAdminPath(pathname) && !isAdminPublicPath(pathname)) {
@@ -54,9 +48,16 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.next({
-    request: { headers: reqHeaders },
-  });
+  // x-pathname header — sadece sayfa rotaları için (admin layout okur)
+  // API rotaları için header'ları değiştirmiyoruz (multipart/form-data parse sorunlarını önler)
+  let response: ReturnType<typeof NextResponse.next>;
+  if (!pathname.startsWith("/api/")) {
+    const reqHeaders = new Headers(request.headers);
+    reqHeaders.set("x-pathname", pathname);
+    response = NextResponse.next({ request: { headers: reqHeaders } });
+  } else {
+    response = NextResponse.next();
+  }
 
   // ============================================
   // Security Headers
@@ -69,7 +70,7 @@ export function proxy(request: NextRequest) {
   response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://alpinbisiklet.com https://*.alpinbisiklet.com; font-src 'self' data:; connect-src 'self' https://sandbox-api.iyzipay.com https://api.iyzipay.com; frame-src 'self' https://sandbox-api.iyzipay.com https://api.iyzipay.com;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://alpinbisiklet.com https://*.alpinbisiklet.com https://images.unsplash.com https://*.unsplash.com; font-src 'self' data:; connect-src 'self' https://sandbox-api.iyzipay.com https://api.iyzipay.com; frame-src 'self' https://sandbox-api.iyzipay.com https://api.iyzipay.com;"
   );
 
   // ============================================

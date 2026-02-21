@@ -78,10 +78,10 @@ export default function OrdersPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-            toast({ title: "Siparis durumu guncellendi" });
+            toast({ title: "Sipariş durumu güncellendi" });
         },
         onError: () => {
-            toast({ title: "Durum guncellenirken hata olustu", variant: "destructive" });
+            toast({ title: "Durum güncellenirken hata oluştu", variant: "destructive" });
         },
     });
 
@@ -90,7 +90,7 @@ export default function OrdersPage() {
 
     return (
         <div className="space-y-6">
-            <PageHeader title="Siparisler" description="Siparis yonetimi ve takibi" />
+            <PageHeader title="Siparişler" description="Sipariş yönetimi ve takibi" />
 
             {/* Filters */}
             <div className="flex flex-wrap gap-4">
@@ -106,10 +106,10 @@ export default function OrdersPage() {
                 </div>
                 <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value === "ALL" ? "" : value); setPage(1); }}>
                     <SelectTrigger className="w-[180px]" aria-label="Durum filtresi">
-                        <SelectValue placeholder="Tum Durumlar" />
+                        <SelectValue placeholder="Tüm Durumlar" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="ALL">Tum Durumlar</SelectItem>
+                        <SelectItem value="ALL">Tüm Durumlar</SelectItem>
                         {statusOptions.map((s) => (
                             <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                         ))}
@@ -121,14 +121,14 @@ export default function OrdersPage() {
             <Sheet open={!!selectedOrder} onOpenChange={(open) => { if (!open) setSelectedOrder(null); }}>
                 <SheetContent side="right" className="sm:max-w-lg overflow-y-auto">
                     <SheetHeader>
-                        <SheetTitle>Siparis #{selectedOrder?.orderNumber}</SheetTitle>
-                        <SheetDescription>Siparis detaylari ve durum guncelleme</SheetDescription>
+                        <SheetTitle>Sipariş #{selectedOrder?.orderNumber}</SheetTitle>
+                        <SheetDescription>Sipariş detayları ve durum güncelleme</SheetDescription>
                     </SheetHeader>
                     {selectedOrder && (
                         <div className="space-y-6 p-4">
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <span className="text-muted-foreground">Musteri</span>
+                                    <span className="text-muted-foreground">Müşteri</span>
                                     <p className="font-medium">{selectedOrder.user?.name}</p>
                                 </div>
                                 <div>
@@ -140,9 +140,9 @@ export default function OrdersPage() {
                                     <p className="font-medium">{new Date(selectedOrder.createdAt).toLocaleDateString("tr-TR")}</p>
                                 </div>
                                 <div>
-                                    <span className="text-muted-foreground">Durum Guncelle</span>
+                                    <span className="text-muted-foreground">Durum Güncelle</span>
                                     <Select value={selectedOrder.status} onValueChange={(value) => updateStatus.mutate({ id: selectedOrder.id, status: value })}>
-                                        <SelectTrigger className="w-full mt-1" aria-label="Siparis durumunu guncelle">
+                                        <SelectTrigger className="w-full mt-1" aria-label="Sipariş durumunu güncelle">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -155,7 +155,7 @@ export default function OrdersPage() {
                             </div>
                             {selectedOrder.items && selectedOrder.items.length > 0 && (
                                 <div>
-                                    <h3 className="font-medium mb-2">Urunler</h3>
+                                    <h3 className="font-medium mb-2">Ürünler</h3>
                                     <div className="space-y-1">
                                         {selectedOrder.items.map((item, i) => (
                                             <div key={i} className="flex justify-between text-sm py-1 border-b last:border-b-0">
@@ -177,7 +177,7 @@ export default function OrdersPage() {
                     {isLoading ? (
                         <TableSkeleton rows={5} />
                     ) : orders.length === 0 ? (
-                        <EmptyState icon={ShoppingCart} title="Henuz siparis yok" description="Siparisler burada listelenecek" />
+                        <EmptyState icon={ShoppingCart} title="Henüz sipariş yok" description="Siparişler burada listelenecek" />
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">

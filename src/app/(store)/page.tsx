@@ -12,6 +12,7 @@ import { NewProductsSection } from "@/components/store/home/new-products-section
 import { BrandMarquee } from "@/components/store/home/brand-marquee";
 import { DiscountedProductsSection } from "@/components/store/home/discounted-products-section";
 import { PopularProductsSection } from "@/components/store/home/popular-products-section";
+import { BlogSection } from "@/components/store/home/blog-section";
 
 const BicycleShowcase = dynamic(
   () => import("@/components/3d/bicycle-showcase").then((mod) => mod.BicycleShowcase),
@@ -161,6 +162,9 @@ export default function StorePage() {
 
       {/* Popular Products Grid */}
       <PopularProductsSection />
+
+      {/* Blog Section */}
+      <BlogSection />
 
       {/* Stats Section */}
       <section className="py-20">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { FileText, Plus, Trash2, Edit, Eye, EyeOff, Globe } from "lucide-react";
@@ -34,7 +34,18 @@ export default function PagesPage() {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [form, setForm] = useState({ title: "", slug: "", content: "", metaTitle: "", metaDescription: "", isPublished: false });
+    const slugManualRef = useRef(false);
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        if (!slugManualRef.current && form.title) {
+            const slug = form.title.toLowerCase()
+                .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
+                .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
+                .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+            setForm(prev => ({ ...prev, slug }));
+        }
+    }, [form.title]);
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin-pages"],
@@ -53,13 +64,13 @@ export default function PagesPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-pages"] });
-            toast({ title: editingId ? "Sayfa guncellendi" : "Sayfa olusturuldu" });
+            toast({ title: editingId ? "Sayfa güncellendi" : "Sayfa oluşturuldu" });
             setShowForm(false);
             setEditingId(null);
             setForm({ title: "", slug: "", content: "", metaTitle: "", metaDescription: "", isPublished: false });
         },
         onError: () => {
-            toast({ title: "Sayfa kaydedilirken hata olustu", variant: "destructive" });
+            toast({ title: "Sayfa kaydedilirken hata oluştu", variant: "destructive" });
         },
     });
 
@@ -73,7 +84,7 @@ export default function PagesPage() {
             setDeleteId(null);
         },
         onError: () => {
-            toast({ title: "Sayfa silinirken hata olustu", variant: "destructive" });
+            toast({ title: "Sayfa silinirken hata oluştu", variant: "destructive" });
             setDeleteId(null);
         },
     });
@@ -94,10 +105,11 @@ export default function PagesPage() {
 
     return (
         <div className="space-y-6">
-            <PageHeader title="Sayfalar" description="CMS sayfa yonetimi">
+            <PageHeader title="Sayfalar" description="CMS sayfa yönetimi">
                 <Button onClick={() => {
                     setShowForm(!showForm);
                     setEditingId(null);
+                    slugManualRef.current = false;
                     setForm({ title: "", slug: "", content: "", metaTitle: "", metaDescription: "", isPublished: false });
                 }}>
                     <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
@@ -121,17 +133,17 @@ export default function PagesPage() {
                                         </div>
                                         <div>
                                             <Label htmlFor="page-slug">Slug</Label>
-                                            <Input id="page-slug" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="hakkimizda" />
+                                            <Input id="page-slug" value={form.slug} onChange={(e) => { slugManualRef.current = true; setForm({ ...form, slug: e.target.value }); }} placeholder="hakkimizda" />
                                         </div>
                                     </div>
                                     <div>
-                                        <Label htmlFor="page-content">Icerik</Label>
+                                        <Label htmlFor="page-content">İçerik</Label>
                                         <Textarea
                                             id="page-content"
                                             value={form.content}
                                             onChange={(e) => setForm({ ...form, content: e.target.value })}
                                             className="min-h-[200px]"
-                                            placeholder="Sayfa icerigini yazin..."
+                                            placeholder="Sayfa içeriğini yazın..."
                                             required
                                         />
                                     </div>
@@ -147,7 +159,7 @@ export default function PagesPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Switch id="page-published" checked={form.isPublished} onCheckedChange={(checked) => setForm({ ...form, isPublished: checked })} />
-                                        <Label htmlFor="page-published">Yayinda</Label>
+                                        <Label htmlFor="page-published">Yayında</Label>
                                     </div>
                                     <div className="flex gap-2">
                                         <Button type="submit" disabled={saveMutation.isPending}>
@@ -168,7 +180,7 @@ export default function PagesPage() {
                     {isLoading ? (
                         <TableSkeleton rows={5} />
                     ) : pages.length === 0 ? (
-                        <EmptyState icon={FileText} title="Henuz sayfa yok" description="CMS sayfalari burada listelenecek" actionLabel="Yeni Sayfa" onAction={() => { setShowForm(true); }} />
+                        <EmptyState icon={FileText} title="Henüz sayfa yok" description="CMS sayfaları burada listelenecek" actionLabel="Yeni Sayfa" onAction={() => { setShowForm(true); }} />
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
@@ -196,6 +208,7 @@ export default function PagesPage() {
                                             <td className="p-4 flex gap-1">
                                                 <Button variant="ghost" size="sm" onClick={() => {
                                                     setEditingId(page.id);
+                                                    slugManualRef.current = true;
                                                     setForm({
                                                         title: page.title, slug: page.slug, content: page.content,
                                                         metaTitle: page.metaTitle || "", metaDescription: page.metaDescription || "",
@@ -221,8 +234,8 @@ export default function PagesPage() {
             <ConfirmDialog
                 open={deleteId !== null}
                 onOpenChange={(open) => { if (!open) setDeleteId(null); }}
-                title="Sayfayi sil"
-                description="Bu sayfayi silmek istediginize emin misiniz? Bu islem geri alinamaz."
+                title="Sayfayı Sil"
+                description="Bu sayfayı silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
                 loading={deleteMutation.isPending}
                 onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId); }}
             />

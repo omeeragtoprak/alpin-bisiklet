@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -33,6 +33,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { createCategorySchema, CreateCategoryInput } from "@/lib/validations";
 
+function toSlug(name: string) {
+    return name
+        .toLowerCase()
+        .replace(/ğ/g, "g")
+        .replace(/ü/g, "u")
+        .replace(/ş/g, "s")
+        .replace(/ı/g, "i")
+        .replace(/ö/g, "o")
+        .replace(/ç/g, "c")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
+
 interface CategoryFormProps {
     initialData?: any;
 }
@@ -40,6 +53,8 @@ interface CategoryFormProps {
 export function CategoryForm({ initialData }: CategoryFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    // Kullanıcı slug'ı manuel düzenlediyse otomatik güncellemeyi durdur
+    const slugManualRef = useRef(!!initialData?.slug);
 
     const form = useForm({
         resolver: zodResolver(createCategorySchema),
@@ -51,7 +66,6 @@ export function CategoryForm({ initialData }: CategoryFormProps) {
                 image: initialData.image || "",
                 parentId: initialData.parentId || null,
                 isActive: initialData.isActive,
-                order: initialData.order || 0,
             }
             : {
                 name: "",
@@ -60,9 +74,16 @@ export function CategoryForm({ initialData }: CategoryFormProps) {
                 image: "",
                 parentId: null,
                 isActive: true,
-                order: 0,
             },
     });
+
+    // İsimden otomatik slug üret
+    const nameValue = form.watch("name");
+    useEffect(() => {
+        if (!slugManualRef.current && nameValue) {
+            form.setValue("slug", toSlug(nameValue), { shouldValidate: false });
+        }
+    }, [nameValue, form]);
 
     const { data: categories } = useQuery({
         queryKey: ["categories"],
@@ -75,37 +96,41 @@ export function CategoryForm({ initialData }: CategoryFormProps) {
     const onSubmit = async (data: CreateCategoryInput) => {
         try {
             setLoading(true);
+            // Boş slug gönderme, API isimden oluştursun
+            const payload = {
+                ...data,
+                slug: data.slug?.trim() || undefined,
+            };
             if (initialData) {
-                // Update
                 const res = await fetch(`/api/categories/${initialData.id}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(payload),
                 });
                 if (!res.ok) throw new Error("Güncelleme başarısız");
             } else {
-                // Create
                 const res = await fetch("/api/categories", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(payload),
                 });
                 if (!res.ok) throw new Error("Oluşturma başarısız");
             }
-            toast({ title: initialData ? "Kategori guncellendi" : "Kategori olusturuldu" });
+            toast({ title: initialData ? "Kategori güncellendi" : "Kategori oluşturuldu" });
             router.push("/admin/kategoriler");
             router.refresh();
         } catch (error) {
             console.error(error);
-            toast({ title: "Bir hata olustu", variant: "destructive" });
+            toast({ title: "Bir hata oluştu", variant: "destructive" });
         } finally {
             setLoading(false);
         }
     };
 
-    // Filtrele: Kendi kendini parent yapmamalı
+    // Yalnızca kök kategoriler (parentId yok) üst kategori olabilir
+    // Bu, 2 seviyeli hiyerarşi sağlar: Bisikletler > Dağ Bisikleti
     const availableParents = categories?.data?.filter(
-        (c: any) => c.id !== initialData?.id
+        (c: any) => c.id !== initialData?.id && !c.parentId
     ) || [];
 
     return (
@@ -138,10 +163,17 @@ export function CategoryForm({ initialData }: CategoryFormProps) {
                                         <FormItem>
                                             <FormLabel>Slug (Bağlantı)</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Otomatik oluşturulur" {...field} />
+                                                <Input
+                                                    placeholder="otomatik-olusturulur"
+                                                    {...field}
+                                                    onChange={(e) => {
+                                                        slugManualRef.current = true;
+                                                        field.onChange(e);
+                                                    }}
+                                                />
                                             </FormControl>
                                             <FormDescription>
-                                                Boş bırakırsanız isme göre otomatik oluşturulur.
+                                                İsme göre otomatik oluşturulur, istersen düzenleyebilirsin.
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>
@@ -205,7 +237,6 @@ export function CategoryForm({ initialData }: CategoryFormProps) {
                                         <FormItem>
                                             <FormLabel>Üst Kategori</FormLabel>
                                             <Select
-                                                disabled={!availableParents.length}
                                                 onValueChange={(value) =>
                                                     field.onChange(value === "null" ? null : Number(value))
                                                 }
@@ -228,25 +259,8 @@ export function CategoryForm({ initialData }: CategoryFormProps) {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="order"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Sıralama</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    {...field}
-                                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                                />
-                                            </FormControl>
                                             <FormDescription>
-                                                Küçük sayı daha önce gösterilir.
+                                                Yalnızca ana kategoriler seçilebilir.
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>

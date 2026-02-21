@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "sileo";
 
 export const metadata: Metadata = {
   title: "Alpin Bisiklet",
@@ -41,7 +41,7 @@ export default function RootLayout({
           >
             <TooltipProvider delayDuration={0}>
               {children}
-              <Toaster />
+              <Toaster position="top-right" />
             </TooltipProvider>
           </ThemeProvider>
         </Providers>

@@ -90,7 +90,7 @@ export default function SettingsPage() {
             toast({ title: "Ayarlar kaydedildi" });
         },
         onError: () => {
-            toast({ title: "Ayarlar kaydedilirken hata olustu", variant: "destructive" });
+            toast({ title: "Ayarlar kaydedilirken hata oluştu", variant: "destructive" });
         },
     });
 
@@ -98,7 +98,7 @@ export default function SettingsPage() {
 
     return (
         <div className="space-y-6">
-            <PageHeader title="Ayarlar" description="Magaza yapilandirmasi ve tercihler" />
+            <PageHeader title="Ayarlar" description="Mağaza yapılandırması ve tercihler" />
 
             {/* Settings Tabs */}
             {isLoading ? (
@@ -156,7 +156,7 @@ export default function SettingsPage() {
                                     <div className="pt-4 border-t">
                                         <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
                                             <Save className="h-4 w-4 mr-2" aria-hidden="true" />
-                                            {saveMutation.isPending ? "Kaydediliyor..." : "Degisiklikleri Kaydet"}
+                                            {saveMutation.isPending ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
                                         </Button>
                                     </div>
                                 </CardContent>

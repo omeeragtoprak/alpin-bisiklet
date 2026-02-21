@@ -86,8 +86,10 @@ export const createCategorySchema = z.object({
   name: z.string().min(2, "Kategori adı en az 2 karakter olmalı"),
   slug: z
     .string()
-    .regex(/^[a-z0-9-]+$/, "Slug sadece küçük harf, rakam ve tire içerebilir")
-    .optional(),
+    .regex(/^[a-z0-9-]*$/, "Slug sadece küçük harf, rakam ve tire içerebilir")
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v === "" ? undefined : v)),
   description: z.string().optional(),
   image: z.string().optional(),
   parentId: z.number().int().positive().optional().nullable(),
@@ -212,6 +214,34 @@ export const updatePageSchema = createPageSchema.partial();
 /** Sayfa tipleri */
 export type CreatePageInput = z.infer<typeof createPageSchema>;
 export type UpdatePageInput = z.infer<typeof updatePageSchema>;
+
+// ============================================
+// BLOG SCHEMA'LARI
+// ============================================
+
+/** Blog yazısı oluşturma schema'sı */
+export const createBlogSchema = z.object({
+  title: z.string().min(1, "Başlık gerekli"),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-]*$/, "Slug sadece küçük harf, rakam ve tire içerebilir")
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v === "" ? undefined : v)),
+  content: z.string().min(1, "İçerik gerekli"),
+  excerpt: z.string().optional(),
+  coverImage: z.string().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  isPublished: z.boolean().default(false),
+});
+
+/** Blog yazısı güncelleme schema'sı */
+export const updateBlogSchema = createBlogSchema.partial();
+
+/** Blog tipleri */
+export type CreateBlogInput = z.infer<typeof createBlogSchema>;
+export type UpdateBlogInput = z.infer<typeof updateBlogSchema>;
 
 // ============================================
 // KUPON SCHEMA'LARI

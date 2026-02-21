@@ -55,6 +55,7 @@ const navigation = [
   },
   { name: "Yedek Parça", href: "/urunler?kategori=yedek-parca" },
   { name: "Markalar", href: "/markalar" },
+  { name: "Blog", href: "/blog" },
   { name: "İletişim", href: "/iletisim" },
 ];
 

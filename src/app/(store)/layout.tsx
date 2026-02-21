@@ -1,5 +1,6 @@
 import { StoreHeader, StoreFooter, CartDrawer } from "@/components/store";
 import { PageTransition } from "@/components/animations";
+import { BlogPopup } from "@/components/store/blog-popup";
 
 import type { Metadata } from "next";
 
@@ -39,6 +40,7 @@ export default function StoreLayout({
         <PageTransition>{children}</PageTransition>
       </main>
       <StoreFooter />
+      <BlogPopup />
     </div>
   );
 }

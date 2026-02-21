@@ -40,10 +40,11 @@ import { ProductPreviewCard } from "@/components/admin/previews/product-preview-
 // Edit modunda id hariç aynı yapıyı kullanacağız.
 
 interface ProductFormProps {
-    initialData?: any; // Tip güvenliği için daha sonra Product tipini kullanabiliriz
+    initialData?: any;
+    initialBarcode?: string;
 }
 
-export function ProductForm({ initialData }: ProductFormProps) {
+export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
 
@@ -84,7 +85,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                 comparePrice: undefined,
                 cost: undefined,
                 sku: "",
-                barcode: "",
+                barcode: initialBarcode || "",
                 stock: 0,
                 lowStockAlert: 5,
                 trackStock: true,
@@ -436,6 +437,23 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                             <FormLabel>SKU (Stok Kodu)</FormLabel>
                                             <FormControl>
                                                 <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="barcode"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Barkod</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Barkod numarası"
+                                                    className="font-mono"
+                                                    {...field}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

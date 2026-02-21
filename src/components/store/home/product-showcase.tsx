@@ -17,7 +17,7 @@ export function ProductShowcase() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await productService.getAll({ isFeatured: true, limit: 12 });
+                const response = await productService.getAll({ isFeatured: true, isActive: true, limit: 12 });
                 setProducts(response.data);
             } catch (error) {
                 console.error("Failed to fetch products:", error);

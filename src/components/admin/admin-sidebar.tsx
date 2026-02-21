@@ -76,6 +76,7 @@ const navMain: NavItem[] = [
   { title: "Kuponlar", url: "/admin/kuponlar", icon: Ticket },
   { title: "Bannerlar", url: "/admin/bannerlar", icon: ImageIcon },
   { title: "Sayfalar", url: "/admin/sayfalar", icon: FileText },
+  { title: "Blog", url: "/admin/blog", icon: FileText },
   { title: "Barkod", url: "/admin/barkod", icon: Box },
   { title: "Raporlar", url: "/admin/raporlar", icon: BarChart3 },
   { title: "Ayarlar", url: "/admin/ayarlar", icon: Settings },
@@ -136,7 +137,7 @@ export function AdminSidebar() {
       {/* Navigation */}
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Platform</SidebarGroupLabel>
+          <SidebarGroupLabel>Menü</SidebarGroupLabel>
           <SidebarMenu className="gap-1">
             {navMain.map((item) => {
               if (!item.items) {

@@ -73,13 +73,13 @@ export default function CouponsPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
-            toast({ title: editingId ? "Kupon guncellendi" : "Kupon olusturuldu" });
+            toast({ title: editingId ? "Kupon güncellendi" : "Kupon oluşturuldu" });
             setShowForm(false);
             setEditingId(null);
             resetForm();
         },
         onError: () => {
-            toast({ title: "Kupon kaydedilirken hata olustu", variant: "destructive" });
+            toast({ title: "Kupon kaydedilirken hata oluştu", variant: "destructive" });
         },
     });
 
@@ -93,7 +93,7 @@ export default function CouponsPage() {
             setDeleteId(null);
         },
         onError: () => {
-            toast({ title: "Kupon silinirken hata olustu", variant: "destructive" });
+            toast({ title: "Kupon silinirken hata oluştu", variant: "destructive" });
             setDeleteId(null);
         },
     });
@@ -126,7 +126,7 @@ export default function CouponsPage() {
 
     return (
         <div className="space-y-6">
-            <PageHeader title="Kuponlar" description="Indirim kuponlari yonetimi">
+            <PageHeader title="Kuponlar" description="İndirim kuponları yönetimi">
                 <Button onClick={() => { setShowForm(!showForm); setEditingId(null); resetForm(); }}>
                     <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                     Yeni Kupon
@@ -146,15 +146,15 @@ export default function CouponsPage() {
                                     <Input id="coupon-code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="YILBASI25" required />
                                 </div>
                                 <div>
-                                    <Label htmlFor="coupon-type">Tur</Label>
+                                    <Label htmlFor="coupon-type">Tür</Label>
                                     <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value })}>
                                         <SelectTrigger className="w-full" id="coupon-type">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="PERCENTAGE">Yuzde Indirim</SelectItem>
+                                            <SelectItem value="PERCENTAGE">Yüzde İndirim</SelectItem>
                                             <SelectItem value="FIXED">Sabit Tutar</SelectItem>
-                                            <SelectItem value="FREE_SHIPPING">Ucretsiz Kargo</SelectItem>
+                                            <SelectItem value="FREE_SHIPPING">Ücretsiz Kargo</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -191,7 +191,7 @@ export default function CouponsPage() {
                     {isLoading ? (
                         <TableSkeleton rows={5} />
                     ) : coupons.length === 0 ? (
-                        <EmptyState icon={Ticket} title="Henuz kupon yok" description="Indirim kuponlari burada listelenecek" actionLabel="Yeni Kupon" onAction={() => { setShowForm(true); resetForm(); }} />
+                        <EmptyState icon={Ticket} title="Henüz kupon yok" description="İndirim kuponları burada listelenecek" actionLabel="Yeni Kupon" onAction={() => { setShowForm(true); resetForm(); }} />
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
@@ -258,7 +258,7 @@ export default function CouponsPage() {
                 open={deleteId !== null}
                 onOpenChange={(open) => { if (!open) setDeleteId(null); }}
                 title="Kuponu sil"
-                description="Bu kuponu silmek istediginize emin misiniz? Bu islem geri alinamaz."
+                description="Bu kuponu silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
                 loading={deleteMutation.isPending}
                 onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId); }}
             />

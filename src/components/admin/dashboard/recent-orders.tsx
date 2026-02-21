@@ -21,10 +21,10 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Son Siparisler</CardTitle>
+        <CardTitle>Son Siparişler</CardTitle>
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admin/siparisler">
-            Tumunu Gor
+            Tümünü Gör
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
@@ -32,8 +32,8 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
       <CardContent>
         {orders.length === 0 ? (
           <EmptyState
-            title="Henuz siparis yok"
-            description="Siparisler burada gorunecek"
+            title="Henüz sipariş yok"
+            description="Siparişler burada görünecek"
           />
         ) : (
           <div className="overflow-x-auto">
@@ -41,10 +41,10 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">
-                    Siparis No
+                    Sipariş No
                   </th>
                   <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">
-                    Musteri
+                    Müşteri
                   </th>
                   <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">
                     Tutar

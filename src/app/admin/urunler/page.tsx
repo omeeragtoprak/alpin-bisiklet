@@ -15,7 +15,7 @@ import { useAdminMutation } from "@/hooks/use-admin-mutation";
 
 async function getProducts() {
   const res = await fetch("/api/products?limit=100");
-  if (!res.ok) throw new Error("Urunler getirilemedi");
+  if (!res.ok) throw new Error("Ürünler getirilemedi");
   return res.json();
 }
 
@@ -30,12 +30,12 @@ export default function AdminProductsPage() {
   const deleteMutation = useAdminMutation({
     mutationFn: async (id: number) => {
       const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Urun silinemedi");
+      if (!res.ok) throw new Error("Ürün silinemedi");
       return res.json();
     },
     invalidateKeys: [["products"]],
-    successMessage: "Urun silindi",
-    errorMessage: "Urun silinirken hata olustu",
+    successMessage: "Ürün silindi",
+    errorMessage: "Ürün silinirken hata oluştu",
     onSuccess: () => setDeleteTarget(null),
   });
 
@@ -48,7 +48,7 @@ export default function AdminProductsPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Urunler" description="Tum urunleri yonetin" />
+        <PageHeader title="Ürünler" description="Tüm ürünleri yönetin" />
         <EmptyState title="Hata" description={(error as Error).message} />
       </div>
     );
@@ -58,11 +58,11 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Urunler" description="Tum urunleri yonetin">
+      <PageHeader title="Ürünler" description="Tüm ürünleri yönetin">
         <Button asChild>
           <Link href="/admin/urunler/yeni">
             <Plus className="mr-2 h-4 w-4" />
-            Yeni Urun
+            Yeni Ürün
           </Link>
         </Button>
       </PageHeader>
@@ -71,9 +71,9 @@ export default function AdminProductsPage() {
         <TableSkeleton />
       ) : products.length === 0 ? (
         <EmptyState
-          title="Henuz urun yok"
-          description="Ilk urununu ekleyerek baslayabilirsin"
-          actionLabel="Yeni Urun Ekle"
+          title="Henüz ürün yok"
+          description="İlk ürününü ekleyerek başlayabilirsin"
+          actionLabel="Yeni Ürün Ekle"
           actionHref="/admin/urunler/yeni"
         />
       ) : (
@@ -85,8 +85,8 @@ export default function AdminProductsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Urunu Sil"
-        description={`"${deleteTarget?.name}" urunu kalici olarak silinecek. Bu islem geri alinamaz.`}
+        title="Ürünü Sil"
+        description={`"${deleteTarget?.name}" ürünü kalıcı olarak silinecek. Bu işlem geri alınamaz.`}
         loading={deleteMutation.isPending}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
       />

@@ -42,7 +42,7 @@ export default function CustomersPage() {
 
     return (
         <div className="space-y-6">
-            <PageHeader title="Musteriler" description="Musteri listesi ve yonetimi" />
+            <PageHeader title="Müşteriler" description="Müşteri listesi ve yönetimi" />
 
             <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -60,7 +60,7 @@ export default function CustomersPage() {
                     {isLoading ? (
                         <TableSkeleton rows={5} />
                     ) : users.length === 0 ? (
-                        <EmptyState icon={Users} title="Henuz musteri yok" description="Musteriler burada listelenecek" />
+                        <EmptyState icon={Users} title="Henüz müşteri yok" description="Müşteriler burada listelenecek" />
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">

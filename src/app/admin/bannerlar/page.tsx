@@ -15,7 +15,7 @@ import { useAdminMutation } from "@/hooks/use-admin-mutation";
 
 async function getBanners() {
   const res = await fetch("/api/banners");
-  if (!res.ok) throw new Error("Bannerlar yuklenemedi");
+  if (!res.ok) throw new Error("Bannerlar yüklenemedi");
   return res.json();
 }
 
@@ -35,7 +35,7 @@ export default function BannersPage() {
     },
     invalidateKeys: [["banners"]],
     successMessage: "Banner silindi",
-    errorMessage: "Banner silinirken hata olustu",
+    errorMessage: "Banner silinirken hata oluştu",
     onSuccess: () => setDeleteTarget(null),
   });
 
@@ -47,7 +47,7 @@ export default function BannersPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Banner Yonetimi" description="Site bannerlarini yonetin" />
+        <PageHeader title="Banner Yönetimi" description="Site bannerlarını yönetin" />
         <EmptyState title="Hata" description={(error as Error).message} />
       </div>
     );
@@ -57,7 +57,7 @@ export default function BannersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Banner Yonetimi" description="Site bannerlarini ve slider gorsellerini yonetin">
+      <PageHeader title="Banner Yönetimi" description="Site bannerlarını ve slider görsellerini yönetin">
         <Button asChild>
           <Link href="/admin/bannerlar/yeni">
             <Plus className="mr-2 h-4 w-4" />
@@ -70,8 +70,8 @@ export default function BannersPage() {
         <TableSkeleton />
       ) : banners.length === 0 ? (
         <EmptyState
-          title="Henuz banner yok"
-          description="Ilk bannerinizi ekleyerek baslayin"
+          title="Henüz banner yok"
+          description="İlk bannerinizi ekleyerek başlayın"
           actionLabel="Yeni Banner"
           actionHref="/admin/bannerlar/yeni"
         />
@@ -85,7 +85,7 @@ export default function BannersPage() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title="Banneri Sil"
-        description={`"${deleteTarget?.title}" banneri kalici olarak silinecek.`}
+        description={`"${deleteTarget?.title}" banneri kalıcı olarak silinecek.`}
         loading={deleteMutation.isPending}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
       />

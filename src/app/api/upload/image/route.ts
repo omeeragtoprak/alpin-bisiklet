@@ -1,14 +1,15 @@
-import { requireAuth } from "@/lib/auth-server";
+import { auth } from "@/lib/auth";
 import { uploadImage, uploadImages } from "@/lib/upload";
+import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth kontrolü
-    const session = await requireAuth();
-    if (!session) {
+    // Auth kontrolü — diğer admin route'larıyla aynı pattern
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session || session.user?.role !== "ADMIN") {
       return NextResponse.json(
-        { success: false, error: "Yetkilendirme gerekli" },
+        { success: false, error: "Yetkisiz erişim" },
         { status: 401 }
       );
     }
@@ -26,9 +27,13 @@ export async function POST(request: NextRequest) {
     // Tek dosya mı yoksa birden fazla mı?
     if (files.length === 1) {
       const result = await uploadImage(files[0]);
-      return NextResponse.json(result, {
-        status: result.success ? 200 : 400,
-      });
+      if (!result.success) {
+        return NextResponse.json(
+          { success: false, error: result.error || "Yükleme başarısız" },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json(result, { status: 200 });
     }
 
     // Birden fazla dosya

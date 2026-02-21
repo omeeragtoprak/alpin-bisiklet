@@ -40,14 +40,14 @@ export function createColumns(onDelete: (id: number, name: string) => void): Col
             (table.getIsSomePageRowsSelected() && "indeterminate")
           }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Tumunu sec"
+          aria-label="Tümünü seç"
         />
       ),
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Satiri sec"
+          aria-label="Satırı seç"
         />
       ),
       enableSorting: false,
@@ -60,7 +60,7 @@ export function createColumns(onDelete: (id: number, name: string) => void): Col
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Urun
+          Ürün
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -173,12 +173,12 @@ export function createColumns(onDelete: (id: number, name: string) => void): Col
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Islemler</DropdownMenuLabel>
+              <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href={`/admin/urunler/${product.id}`} className="cursor-pointer">
                   <Pencil className="mr-2 h-4 w-4" />
-                  Duzenle
+                  Düzenle
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem

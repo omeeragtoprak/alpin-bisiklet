@@ -5,12 +5,33 @@ import { auth } from "@/lib/auth";
 import { createBrandSchema } from "@/lib/validations";
 
 // GET /api/brands - Marka listesi
-export async function GET() {
+export async function GET(request: NextRequest) {
 	try {
+		const { searchParams } = new URL(request.url);
+		const categoryId = searchParams.get("categoryId");
+
+		const where: any = { isActive: true };
+
+		// Belirli bir kategoride ürünü olan markalar
+		if (categoryId) {
+			where.products = {
+				some: {
+					isActive: true,
+					categoryId: Number(categoryId),
+				},
+			};
+		}
+
 		const brands = await prisma.brand.findMany({
-			where: { isActive: true },
+			where,
 			include: {
-				_count: { select: { products: true } },
+				_count: {
+					select: {
+						products: categoryId
+							? { where: { isActive: true, categoryId: Number(categoryId) } }
+							: { where: { isActive: true } },
+					},
+				},
 			},
 			orderBy: { name: "asc" },
 		});

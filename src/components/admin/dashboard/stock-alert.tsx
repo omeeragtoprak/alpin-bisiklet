@@ -21,7 +21,7 @@ export function StockAlert({ products }: StockAlertProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-orange-500" />
-          <CardTitle className="text-base">Stok Uyarilari</CardTitle>
+          <CardTitle className="text-base">Stok Uyarıları</CardTitle>
         </div>
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admin/urunler">
@@ -32,7 +32,7 @@ export function StockAlert({ products }: StockAlertProps) {
       <CardContent>
         {products.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Stok uyarisi yok
+            Stok uyarısı yok
           </p>
         ) : (
           <ul className="space-y-3">
@@ -44,7 +44,7 @@ export function StockAlert({ products }: StockAlertProps) {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{product.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    Esik: {product.lowStockAlert ?? product.threshold ?? 5}
+                    Eşik: {product.lowStockAlert ?? product.threshold ?? 5}
                   </p>
                 </div>
                 <span className="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold">

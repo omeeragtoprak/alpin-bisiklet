@@ -29,9 +29,7 @@ export function ImageUpload({
 
         setIsUploading(true);
         const formData = new FormData();
-        // Şu anlık tek dosya yüklemeyi destekliyoruz API tarafında,
-        // ama component birden fazla imajı array olarak tutuyor.
-        formData.append("file", files[0]);
+        formData.append("files", files[0]);
 
         try {
             const res = await fetch("/api/upload/image", {
@@ -39,16 +37,16 @@ export function ImageUpload({
                 body: formData,
             });
 
+            const data = await res.json();
+
             if (!res.ok) {
-                throw new Error("Resim yüklenemedi");
+                throw new Error(data?.error || "Resim yüklenemedi");
             }
 
-            const data = await res.json();
-            // API { url: "..." } dönüyor
             onChange([...value, data.url]);
         } catch (error) {
-            console.error("Upload error:", error);
-            toast({ title: "Hata", description: "Resim yüklenirken bir hata oluştu.", variant: "destructive" });
+            const message = error instanceof Error ? error.message : "Resim yüklenirken bir hata oluştu.";
+            toast({ title: "Yükleme Hatası", description: message, variant: "destructive" });
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {

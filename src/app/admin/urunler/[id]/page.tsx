@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/admin/products/product-form";
 
 interface EditProductPageProps {
-    params: {
+    params: Promise<{
         id: string;
-    };
+    }>;
 }
 
 async function getProduct(id: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/products/${id}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"}/api/products/${id}`, {
         cache: "no-store",
     });
 
@@ -21,9 +21,7 @@ async function getProduct(id: string) {
 }
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
-    // The instruction to "await params" is not syntactically valid for the 'params' object
-    // which is directly available. Assuming the intent was to destructure 'id' from 'params'.
-    const { id } = params;
+    const { id } = await params;
     const product = await getProduct(id);
 
     if (!product) {

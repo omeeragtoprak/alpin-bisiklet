@@ -15,7 +15,7 @@ import { useAdminMutation } from "@/hooks/use-admin-mutation";
 
 async function getBrands() {
   const res = await fetch("/api/brands");
-  if (!res.ok) throw new Error("Markalar yuklenemedi");
+  if (!res.ok) throw new Error("Markalar yüklenemedi");
   return res.json();
 }
 
@@ -35,7 +35,7 @@ export default function BrandsPage() {
     },
     invalidateKeys: [["brands"]],
     successMessage: "Marka silindi",
-    errorMessage: "Marka silinirken hata olustu",
+    errorMessage: "Marka silinirken hata oluştu",
     onSuccess: () => setDeleteTarget(null),
   });
 
@@ -47,7 +47,7 @@ export default function BrandsPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Markalar" description="Urun markalarini yonetin" />
+        <PageHeader title="Markalar" description="Ürün markalarını yönetin" />
         <EmptyState title="Hata" description={(error as Error).message} />
       </div>
     );
@@ -57,7 +57,7 @@ export default function BrandsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Markalar" description="Urun markalarini yonetin">
+      <PageHeader title="Markalar" description="Ürün markalarını yönetin">
         <Button asChild>
           <Link href="/admin/markalar/yeni">
             <Plus className="mr-2 h-4 w-4" />
@@ -70,8 +70,8 @@ export default function BrandsPage() {
         <TableSkeleton />
       ) : brands.length === 0 ? (
         <EmptyState
-          title="Henuz marka yok"
-          description="Ilk markanizi ekleyerek baslayin"
+          title="Henüz marka yok"
+          description="İlk markanızı ekleyerek başlayın"
           actionLabel="Yeni Marka"
           actionHref="/admin/markalar/yeni"
         />
@@ -84,8 +84,8 @@ export default function BrandsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Markayi Sil"
-        description={`"${deleteTarget?.name}" markasi kalici olarak silinecek.`}
+        title="Markayı Sil"
+        description={`"${deleteTarget?.name}" markası kalıcı olarak silinecek.`}
         loading={deleteMutation.isPending}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
       />
