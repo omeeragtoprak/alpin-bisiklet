@@ -1,8 +1,9 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { admin } from "better-auth/plugins";
+import { admin, twoFactor } from "better-auth/plugins";
 import prisma from "./prisma";
+import { sendAdminOtpEmail } from "./mail";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -40,17 +41,16 @@ export const auth = betterAuth({
     },
   },
 
-  // Sosyal giriş sağlayıcıları (opsiyonel)
-  // socialProviders: {
-  //   google: {
-  //     clientId: process.env.GOOGLE_CLIENT_ID!,
-  //     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  //   },
-  // },
-
   plugins: [
     nextCookies(), // Server actions için cookie desteği
     admin(), // Admin plugin for role-based access
+    twoFactor({
+      otpOptions: {
+        async sendOTP({ user, otp }) {
+          await sendAdminOtpEmail(user.email, otp);
+        },
+      },
+    }),
   ],
 });
 

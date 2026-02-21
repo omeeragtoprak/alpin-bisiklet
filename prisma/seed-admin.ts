@@ -7,7 +7,7 @@ import * as crypto from "crypto";
 
 dotenv.config();
 
-const ADMIN_EMAIL = "admin@alpinbisiklet.com";
+const ADMIN_EMAIL = "koksaltekin@alpinbisiklet.com";
 const ADMIN_PASSWORD = "Admin123!";
 const ADMIN_NAME = "Admin";
 

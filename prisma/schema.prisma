@@ -15,18 +15,19 @@ datasource db {
 // ============================================
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  emailVerified Boolean   @default(false)
-  image         String?
-  phone         String?
-  role          String    @default("CUSTOMER")
-  banned        Boolean   @default(false)
-  banReason     String?
-  banExpires    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  name               String?
+  emailVerified      Boolean   @default(false)
+  image              String?
+  phone              String?
+  role               String    @default("CUSTOMER")
+  banned             Boolean   @default(false)
+  banReason          String?
+  banExpires         DateTime?
+  twoFactorEnabled   Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   // İlişkiler
   sessions      Session[]
@@ -37,8 +38,19 @@ model User {
   favorites     Favorite[]
   reviews       Review[]
   activityLogs  ActivityLog[]
+  twoFactor     TwoFactor?
 
   @@map("users")
+}
+
+model TwoFactor {
+  id          String @id @default(cuid())
+  userId      String @unique
+  secret      String
+  backupCodes String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("two_factor")
 }
 
 model Session {

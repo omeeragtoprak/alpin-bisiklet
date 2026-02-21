@@ -6,15 +6,27 @@ import { CommandPalette } from "@/components/admin/command-palette";
 import { auth } from "@/lib/auth";
 import "./admin.css";
 
+// Auth check yapılmayan sayfalar
+const publicPages = ["/admin/giris", "/admin/iki-adim-dogrulama"];
+
 export default async function AdminLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const headersList = await headers();
+	const pathname = headersList.get("x-pathname") ?? "";
+
+	// Public sayfalar: sadece children render et
+	if (publicPages.some((p) => pathname.startsWith(p))) {
+		return <>{children}</>;
+	}
+
+	// Auth + role kontrolü
+	const session = await auth.api.getSession({ headers: headersList });
 
 	if (!session || session.user?.role !== "ADMIN") {
-		redirect("/giris");
+		redirect("/admin/giris");
 	}
 
 	return (

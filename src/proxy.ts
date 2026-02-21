@@ -5,8 +5,11 @@ import { NextResponse } from "next/server";
 // In-memory rate limit store
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-// Korunan rotalar
+// Korunan rotalar (store)
 const protectedPaths = ["/dashboard", "/hesap", "/profil"];
+
+// Admin public sayfaları (auth check yok)
+const adminPublicPaths = ["/admin/giris", "/admin/iki-adim-dogrulama"];
 
 function isProtectedPath(pathname: string): boolean {
   return protectedPaths.some(
@@ -14,18 +17,46 @@ function isProtectedPath(pathname: string): boolean {
   );
 }
 
+function isAdminPath(pathname: string): boolean {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
+function isAdminPublicPath(pathname: string): boolean {
+  return adminPublicPaths.some((path) => pathname.startsWith(path));
+}
+
 export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
   // ============================================
-  // Authentication - Korunan rotalar için kontrol
+  // x-pathname header — layout'un okuyabilmesi için
   // ============================================
-  if (isProtectedPath(request.nextUrl.pathname)) {
+  const reqHeaders = new Headers(request.headers);
+  reqHeaders.set("x-pathname", pathname);
+
+  // ============================================
+  // Admin rotaları — cookie yoksa /admin/giris
+  // ============================================
+  if (isAdminPath(pathname) && !isAdminPublicPath(pathname)) {
+    const sessionCookie = getSessionCookie(request);
+    if (!sessionCookie) {
+      return NextResponse.redirect(new URL("/admin/giris", request.url));
+    }
+  }
+
+  // ============================================
+  // Store korunan rotalar
+  // ============================================
+  if (isProtectedPath(pathname)) {
     const sessionCookie = getSessionCookie(request);
     if (!sessionCookie) {
       return NextResponse.redirect(new URL("/giris", request.url));
     }
   }
 
-  const response = NextResponse.next();
+  const response = NextResponse.next({
+    request: { headers: reqHeaders },
+  });
 
   // ============================================
   // Security Headers
@@ -44,17 +75,18 @@ export function proxy(request: NextRequest) {
   // ============================================
   // API Rate Limiting (basit, in-memory)
   // ============================================
-  if (request.nextUrl.pathname.startsWith("/api/")) {
+  if (pathname.startsWith("/api/")) {
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0] ||
       request.headers.get("x-real-ip") ||
       "unknown";
-    const key = `${ip}:${request.nextUrl.pathname}`;
+    const key = `${ip}:${pathname}`;
     const now = Date.now();
 
-    // Basit rate limit: dakikada 60 istek
+    // Auth endpoint'leri için sıkı limit: dakikada 10
+    const isAuthEndpoint = pathname.startsWith("/api/auth/");
     const windowMs = 60_000;
-    const maxRequests = 60;
+    const maxRequests = isAuthEndpoint ? 10 : 60;
 
     if (!rateLimitMap.has(key)) {
       rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
