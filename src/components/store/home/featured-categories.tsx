@@ -3,9 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
-import { useEffect, useState, useCallback } from "react";
-import { categoryService } from "@/services/category.service";
-import { productService } from "@/services/product.service";
+import { useEffect, useState } from "react";
+import { useHomeCategories } from "@/hooks";
 import { Category } from "@/types";
 import { ArrowUpRight } from "lucide-react";
 
@@ -14,42 +13,7 @@ interface CategoryWithImages extends Category {
 }
 
 export function FeaturedCategories() {
-    const [categories, setCategories] = useState<CategoryWithImages[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const data = await categoryService.getAll();
-                const parents = data
-                    .filter((c) => !c.parentId && c.isActive)
-                    .sort((a, b) => a.order - b.order)
-                    .slice(0, 6);
-
-                // Fetch product images for each category
-                const withImages = await Promise.all(
-                    parents.map(async (cat) => {
-                        try {
-                            const res = await productService.getAll({ categoryId: cat.id, limit: 6 });
-                            const images = res.data
-                                .filter((p) => p.images?.length > 0)
-                                .map((p) => p.images[0].url);
-                            return { ...cat, productImages: images };
-                        } catch {
-                            return { ...cat, productImages: [] };
-                        }
-                    })
-                );
-
-                setCategories(withImages);
-            } catch (error) {
-                console.error("Failed to fetch categories:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
+    const { data: categories = [], isLoading: loading } = useHomeCategories();
 
     if (loading) {
         return (

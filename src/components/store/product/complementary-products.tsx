@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { useRelatedProducts } from "@/hooks";
 import { ProductCard } from "@/components/store/product-card";
-import { ProductListItem } from "@/types";
 
 interface ComplementaryProductsProps {
 	productId: number;
@@ -12,24 +11,8 @@ interface ComplementaryProductsProps {
 export function ComplementaryProducts({
 	productId,
 }: ComplementaryProductsProps) {
-	const [products, setProducts] = useState<ProductListItem[]>([]);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		const fetchRelated = async () => {
-			try {
-				const res = await fetch(`/api/products/related/${productId}`);
-				if (!res.ok) return;
-				const json = await res.json();
-				setProducts(json.complementary || []);
-			} catch {
-				// silently fail — section simply won't render
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchRelated();
-	}, [productId]);
+	const { data, isLoading: loading } = useRelatedProducts(productId);
+	const products = data?.complementary ?? [];
 
 	if (loading) {
 		return (

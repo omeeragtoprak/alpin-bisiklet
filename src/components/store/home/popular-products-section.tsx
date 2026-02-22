@@ -2,29 +2,14 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { usePopularProducts } from "@/hooks";
 import { Button } from "@/components/ui/button";
-import { productService } from "@/services/product.service";
 import { ProductListItem } from "@/types";
 import { ProductCard } from "@/components/store/product-card";
 
 export function PopularProductsSection() {
-	const [products, setProducts] = useState<ProductListItem[]>([]);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		const fetchProducts = async () => {
-			try {
-				const response = await productService.getAll({ isFeatured: true, limit: 4 });
-				setProducts(response.data);
-			} catch (error) {
-				console.error("Failed to fetch popular products:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchProducts();
-	}, []);
+	const { data, isLoading: loading } = usePopularProducts();
+	const products = data?.data ?? [];
 
 	if (loading) {
 		return (

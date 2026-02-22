@@ -3,37 +3,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useFeaturedProducts } from "@/hooks";
 import { ArrowRight, ShoppingCart, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { productService } from "@/services/product.service";
 import { ProductListItem } from "@/types";
 import { useCartStore } from "@/store/use-cart-store";
 import { useToast } from "@/hooks/use-toast";
 
 export function FeaturedProducts() {
-    const [products, setProducts] = useState<ProductListItem[]>([]);
-    const [loading, setLoading] = useState(true);
     const { addItem } = useCartStore();
     const { toast } = useToast();
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await productService.getAll({ isFeatured: true, take: 8 });
-                // The service returns PaginatedResponse, so we need .data.
-                // Wait, productService.getAll returns apiClient.get<PaginatedResponse<ProductListItem>>
-                // api/products returns { data: ..., meta: ... } which matches PaginatedResponse
-                // So response.data is the array.
-                setProducts(response.data);
-            } catch (error) {
-                console.error("Failed to fetch products:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProducts();
-    }, []);
+    const { data, isLoading: loading } = useFeaturedProducts();
+    const products = data?.data ?? [];
 
     const handleAddToCart = (e: React.MouseEvent, product: ProductListItem) => {
         e.preventDefault();

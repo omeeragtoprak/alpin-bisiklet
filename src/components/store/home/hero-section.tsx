@@ -14,30 +14,11 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel";
+import { useHeroBanners } from "@/hooks";
 import { Banner } from "@/types";
-import { useEffect, useState } from "react";
-import { bannerService } from "@/services/banner.service";
 
 export function HeroSection() {
-    const [banners, setBanners] = useState<Banner[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchBanners = async () => {
-            try {
-                const data = await bannerService.getActive();
-                // Filter for HERO position
-                const heroBanners = data.filter(b => b.position === "HERO").sort((a, b) => a.order - b.order);
-                setBanners(heroBanners);
-            } catch (error) {
-                console.error("Failed to fetch banners:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchBanners();
-    }, []);
+    const { data: banners = [], isLoading: loading } = useHeroBanners();
 
     if (loading) {
         return (

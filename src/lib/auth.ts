@@ -46,10 +46,38 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           // Sadece müşterilere hoş geldin maili gönder (admin hesapları hariç)
-          if (user.role !== "ADMIN") {
-            await sendWelcomeEmail(user.email, user.name ?? user.email).catch(
-              (err) => console.error("Welcome email gönderilemedi:", err),
+          if (user.role === "ADMIN") return;
+
+          try {
+            // Öne çıkan veya indirimli ürünleri çek (max 3)
+            const products = await prisma.product.findMany({
+              where: { isActive: true, OR: [{ isFeatured: true }, { comparePrice: { not: null } }] },
+              orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+              take: 3,
+              select: {
+                name: true,
+                price: true,
+                comparePrice: true,
+                slug: true,
+                images: { orderBy: { order: "asc" }, take: 1, select: { url: true } },
+              },
+            });
+
+            const featuredProducts = products.map((p) => ({
+              name: p.name,
+              price: p.price,
+              comparePrice: p.comparePrice,
+              slug: p.slug,
+              imageUrl: p.images[0]?.url ?? null,
+            }));
+
+            await sendWelcomeEmail(
+              user.email,
+              user.name ?? user.email,
+              featuredProducts,
             );
+          } catch (err) {
+            console.error("Welcome email gönderilemedi:", err);
           }
         },
       },

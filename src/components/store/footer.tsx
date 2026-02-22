@@ -11,10 +11,20 @@ import {
   Mail,
   Mountain,
   ArrowRight,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "motion/react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const subscribeSchema = z.object({
+  email: z.string().email("Geçerli bir e-posta adresi giriniz"),
+});
 
 const footerLinks = {
   kurumsal: [
@@ -44,6 +54,79 @@ const socialLinks = [
   { name: "YouTube", href: process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://youtube.com", icon: Youtube },
 ];
 
+type SubscribeForm = z.infer<typeof subscribeSchema>;
+
+function NewsletterForm() {
+  const [success, setSuccess] = useState(false);
+  const [serverError, setServerError] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<SubscribeForm>({
+    resolver: zodResolver(subscribeSchema),
+  });
+
+  async function onSubmit(data: SubscribeForm) {
+    setServerError("");
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setServerError(json.error || "Bir hata oluştu");
+      } else {
+        setSuccess(true);
+        reset();
+      }
+    } catch {
+      setServerError("Bağlantı hatası, lütfen tekrar deneyin.");
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="flex items-center gap-3 bg-white/10 border border-white/20 rounded-xl px-5 py-3.5 w-full max-w-md">
+        <CheckCircle className="h-5 w-5 text-accent shrink-0" />
+        <p className="text-sm font-medium">Abone oldunuz! Onay maili gönderildi.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form className="flex flex-col w-full max-w-md gap-1.5" onSubmit={handleSubmit(onSubmit)}>
+      <div className="flex gap-2">
+        <Input
+          type="email"
+          placeholder="E-posta adresiniz"
+          {...register("email")}
+          className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus-visible:ring-white/30 rounded-xl h-12"
+        />
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl h-12 px-6 font-bold shadow-lg shadow-accent/20 shrink-0"
+        >
+          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+            <>Abone Ol <ArrowRight className="ml-1 h-4 w-4" /></>
+          )}
+        </Button>
+      </div>
+      {errors.email && (
+        <p className="text-sm text-red-300">{errors.email.message}</p>
+      )}
+      {serverError && (
+        <p className="text-sm text-red-300">{serverError}</p>
+      )}
+    </form>
+  );
+}
+
 export function StoreFooter() {
   return (
     <footer className="mt-auto relative overflow-hidden">
@@ -68,20 +151,7 @@ export function StoreFooter() {
                 E-posta bültenimize abone olun, yeni ürünleri ve size özel fırsatları kaçırmayın.
               </p>
             </div>
-            <form className="flex w-full max-w-md gap-2" onSubmit={(e) => e.preventDefault()}>
-              <Input
-                type="email"
-                placeholder="E-posta adresiniz"
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus-visible:ring-white/30 rounded-xl h-12"
-              />
-              <Button
-                type="submit"
-                className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl h-12 px-6 font-bold shadow-lg shadow-accent/20"
-              >
-                Abone Ol
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </form>
+            <NewsletterForm />
           </div>
         </div>
       </div>

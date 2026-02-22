@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useHomeBlog } from "@/hooks";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
@@ -17,18 +17,9 @@ interface BlogPost {
 }
 
 export function BlogSection() {
-    const [posts, setPosts] = useState<BlogPost[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: posts = [], isLoading } = useHomeBlog();
 
-    useEffect(() => {
-        fetch("/api/blog?limit=3")
-            .then((r) => r.json())
-            .then((json) => setPosts(json.data || []))
-            .catch(() => {})
-            .finally(() => setLoading(false));
-    }, []);
-
-    if (!loading && posts.length === 0) return null;
+    if (!isLoading && posts.length === 0) return null;
 
     return (
         <section className="py-16">
@@ -71,7 +62,7 @@ export function BlogSection() {
                 </div>
 
                 {/* Grid */}
-                {loading ? (
+                {isLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[0, 1, 2].map((i) => (
                             <div key={i} className="rounded-2xl border bg-card overflow-hidden animate-pulse">

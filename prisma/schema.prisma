@@ -647,3 +647,11 @@ model ActivityLog {
   @@index([userId])
   @@map("activity_logs")
 }
+
+model NewsletterSubscriber {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  subscribedAt DateTime @default(now())
+
+  @@map("newsletter_subscribers")
+}

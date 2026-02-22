@@ -41,4 +41,26 @@ export const QUERY_KEYS = {
     detail: (id: number) => [...QUERY_KEYS.users.details(), id] as const,
     current: () => [...QUERY_KEYS.users.all, "current"] as const,
   },
+
+  // Banners
+  banners: {
+    all: ["banners"] as const,
+    active: () => [...QUERY_KEYS.banners.all, "active"] as const,
+    hero: () => [...QUERY_KEYS.banners.active(), "hero"] as const,
+  },
+
+  // Blog
+  blog: {
+    all: ["blog"] as const,
+    lists: () => [...QUERY_KEYS.blog.all, "list"] as const,
+    list: (filters: Record<string, unknown>) => [...QUERY_KEYS.blog.lists(), filters] as const,
+    detail: (slug: string) => [...QUERY_KEYS.blog.all, "detail", slug] as const,
+    home: () => [...QUERY_KEYS.blog.lists(), "home"] as const,
+  },
+
+  // Related products (similar + complementary)
+  relatedProducts: {
+    all: ["related-products"] as const,
+    detail: (productId: number) => [...QUERY_KEYS.relatedProducts.all, productId] as const,
+  },
 } as const;

@@ -2,29 +2,14 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useNewProducts } from "@/hooks";
 import { Button } from "@/components/ui/button";
-import { productService } from "@/services/product.service";
 import { ProductListItem } from "@/types";
 import { ProductCard } from "@/components/store/product-card";
 
 export function NewProductsSection() {
-	const [products, setProducts] = useState<ProductListItem[]>([]);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		const fetchProducts = async () => {
-			try {
-				const response = await productService.getAll({ isNew: true, limit: 8 });
-				setProducts(response.data);
-			} catch (error) {
-				console.error("Failed to fetch new products:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchProducts();
-	}, []);
+	const { data, isLoading: loading } = useNewProducts();
+	const products = data?.data ?? [];
 
 	if (loading) {
 		return (

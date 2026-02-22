@@ -2,31 +2,18 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { useEffect, useState, useRef } from "react";
+import { useRef } from "react";
+import { useDiscountedProducts } from "@/hooks";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { productService } from "@/services/product.service";
 import { ProductListItem } from "@/types";
 import { ProductCard } from "@/components/store/product-card";
 
 export function DiscountedProductsSection() {
-	const [products, setProducts] = useState<ProductListItem[]>([]);
-	const [loading, setLoading] = useState(true);
 	const scrollRef = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
-		const fetchProducts = async () => {
-			try {
-				const response = await productService.getAll({ hasDiscount: true, limit: 15 });
-				setProducts(response.data);
-			} catch (error) {
-				console.error("Failed to fetch discounted products:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchProducts();
-	}, []);
+	const { data, isLoading: loading } = useDiscountedProducts();
+	const products = data?.data ?? [];
 
 	const scroll = (direction: "left" | "right") => {
 		if (!scrollRef.current) return;

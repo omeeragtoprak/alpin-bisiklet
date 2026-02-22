@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRelatedProducts } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/store/product-card";
-import { ProductListItem } from "@/types";
 
 interface SimilarProductsProps {
 	productId: number;
@@ -16,25 +16,10 @@ export function SimilarProducts({
 	productId,
 	categoryName,
 }: SimilarProductsProps) {
-	const [products, setProducts] = useState<ProductListItem[]>([]);
-	const [loading, setLoading] = useState(true);
 	const scrollRef = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
-		const fetchRelated = async () => {
-			try {
-				const res = await fetch(`/api/products/related/${productId}`);
-				if (!res.ok) return;
-				const json = await res.json();
-				setProducts(json.similar || []);
-			} catch {
-				// silently fail — section simply won't render
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchRelated();
-	}, [productId]);
+	const { data, isLoading: loading } = useRelatedProducts(productId);
+	const products = data?.similar ?? [];
 
 	const scroll = (direction: "left" | "right") => {
 		if (!scrollRef.current) return;
