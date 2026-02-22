@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "motion/react";
 import { User, Mail, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function RegisterPage() {
 	const router = useRouter();
@@ -45,114 +45,142 @@ export default function RegisterPage() {
 			}
 
 			router.push("/giris");
-		} catch (err: any) {
-			setError(err.message);
+		} catch (err: unknown) {
+			setError(err instanceof Error ? err.message : "Bir hata oluştu");
 		} finally {
 			setLoading(false);
 		}
 	}
 
 	return (
-		<div className="container mx-auto px-4 py-16 max-w-md">
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.5 }}
-			>
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-2xl text-center">Üye Ol</CardTitle>
-						<p className="text-center text-muted-foreground">
-							Yeni hesap oluşturun
+		<div className="flex min-h-[calc(100vh-var(--header-height,8rem))]">
+			{/* Sol — logo / ileride video */}
+			<div className="hidden lg:flex lg:w-1/2 relative items-center justify-center border-r border-border">
+				{/* Logo placeholder — video gelince burası <video> olacak */}
+				<motion.div
+					initial={{ opacity: 0, scale: 0.9 }}
+					animate={{ opacity: 1, scale: 1 }}
+					transition={{ duration: 0.6 }}
+					className="flex flex-col items-center gap-6 px-12 text-center"
+				>
+					<Image
+						src="/logo.png"
+						alt="Alpin Bisiklet"
+						width={260}
+						height={260}
+					/>
+					<div className="space-y-3">
+						<h2 className="text-3xl font-bold tracking-tight">
+							Aramıza Katılın
+						</h2>
+						<p className="text-muted-foreground text-base max-w-xs leading-relaxed">
+							Türkiye'nin en güvenilir bisiklet mağazasında ücretsiz hesap oluşturun.
 						</p>
-					</CardHeader>
-					<CardContent>
-						<form onSubmit={handleSubmit} className="space-y-4">
-							{error && (
-								<div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg">
-									{error}
-								</div>
-							)}
+					</div>
+				</motion.div>
+			</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="name">Ad Soyad</Label>
-								<div className="relative">
-									<User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-									<Input
-										id="name"
-										name="name"
-										type="text"
-										placeholder="Ahmet Yılmaz"
-										className="pl-10"
-										required
-									/>
-								</div>
+			{/* Sağ — form */}
+			<div className="w-full lg:w-1/2 flex items-center justify-center px-6 sm:px-12 lg:px-20 py-16 bg-background">
+				<motion.div
+					initial={{ opacity: 0, x: 20 }}
+					animate={{ opacity: 1, x: 0 }}
+					transition={{ duration: 0.5 }}
+					className="w-full max-w-sm"
+				>
+					{/* Başlık */}
+					<div className="mb-8">
+						<h1 className="text-3xl font-bold tracking-tight">Üye Ol</h1>
+						<p className="text-muted-foreground mt-2">
+							Yeni hesabınızı oluşturun
+						</p>
+					</div>
+
+					<form onSubmit={handleSubmit} className="space-y-5">
+						{error && (
+							<div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20">
+								{error}
 							</div>
+						)}
 
-							<div className="space-y-2">
-								<Label htmlFor="email">E-posta</Label>
-								<div className="relative">
-									<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-									<Input
-										id="email"
-										name="email"
-										type="email"
-										placeholder="ornek@email.com"
-										className="pl-10"
-										required
-									/>
-								</div>
+						<div className="space-y-2">
+							<Label htmlFor="name">Ad Soyad</Label>
+							<div className="relative">
+								<User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+								<Input
+									id="name"
+									name="name"
+									type="text"
+									placeholder="Ahmet Yılmaz"
+									className="pl-10 h-11"
+									required
+								/>
 							</div>
+						</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="password">Şifre</Label>
-								<div className="relative">
-									<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-									<Input
-										id="password"
-										name="password"
-										type="password"
-										placeholder="••••••••"
-										className="pl-10"
-										required
-										minLength={8}
-									/>
-								</div>
-								<p className="text-xs text-muted-foreground">
-									En az 8 karakter, bir büyük harf, bir küçük harf ve bir rakam
-								</p>
+						<div className="space-y-2">
+							<Label htmlFor="email">E-posta</Label>
+							<div className="relative">
+								<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+								<Input
+									id="email"
+									name="email"
+									type="email"
+									placeholder="ornek@email.com"
+									className="pl-10 h-11"
+									required
+								/>
 							</div>
+						</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="confirmPassword">Şifre Tekrar</Label>
-								<div className="relative">
-									<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-									<Input
-										id="confirmPassword"
-										name="confirmPassword"
-										type="password"
-										placeholder="••••••••"
-										className="pl-10"
-										required
-									/>
-								</div>
+						<div className="space-y-2">
+							<Label htmlFor="password">Şifre</Label>
+							<div className="relative">
+								<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+								<Input
+									id="password"
+									name="password"
+									type="password"
+									placeholder="••••••••"
+									className="pl-10 h-11"
+									required
+									minLength={8}
+								/>
 							</div>
+							<p className="text-xs text-muted-foreground">
+								En az 8 karakter
+							</p>
+						</div>
 
-							<Button type="submit" className="w-full" disabled={loading}>
-								{loading ? "Kayıt yapılıyor..." : "Üye Ol"}
-								<ArrowRight className="ml-2 h-4 w-4" />
-							</Button>
-
-							<div className="text-center text-sm text-muted-foreground">
-								Zaten hesabınız var mı?{" "}
-								<Link href="/giris" className="text-primary hover:underline">
-									Giriş yap
-								</Link>
+						<div className="space-y-2">
+							<Label htmlFor="confirmPassword">Şifre Tekrar</Label>
+							<div className="relative">
+								<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+								<Input
+									id="confirmPassword"
+									name="confirmPassword"
+									type="password"
+									placeholder="••••••••"
+									className="pl-10 h-11"
+									required
+								/>
 							</div>
-						</form>
-					</CardContent>
-				</Card>
-			</motion.div>
+						</div>
+
+						<Button type="submit" className="w-full h-11" disabled={loading}>
+							{loading ? "Kayıt yapılıyor..." : "Üye Ol"}
+							<ArrowRight className="ml-2 h-4 w-4" />
+						</Button>
+
+						<p className="text-center text-sm text-muted-foreground">
+							Zaten hesabınız var mı?{" "}
+							<Link href="/giris" className="text-primary font-medium hover:underline">
+								Giriş yap
+							</Link>
+						</p>
+					</form>
+				</motion.div>
+			</div>
 		</div>
 	);
 }
