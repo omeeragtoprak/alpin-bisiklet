@@ -63,4 +63,19 @@ export const QUERY_KEYS = {
     all: ["related-products"] as const,
     detail: (productId: number) => [...QUERY_KEYS.relatedProducts.all, productId] as const,
   },
+
+  // Favorites
+  favorites: {
+    all: ["favorites"] as const,
+    list: () => [...QUERY_KEYS.favorites.all, "list"] as const,
+  },
+
+  // Elden Taksit
+  eldenTaksit: {
+    all: ["elden-taksit"] as const,
+    lists: () => [...QUERY_KEYS.eldenTaksit.all, "list"] as const,
+    list: (filters?: Record<string, unknown>) => [...QUERY_KEYS.eldenTaksit.lists(), filters] as const,
+    details: () => [...QUERY_KEYS.eldenTaksit.all, "detail"] as const,
+    detail: (id: number) => [...QUERY_KEYS.eldenTaksit.details(), id] as const,
+  },
 } as const;

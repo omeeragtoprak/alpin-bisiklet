@@ -446,6 +446,217 @@ export interface NewsletterBlog {
   coverImage: string | null;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Elden Taksit Mailleri
+// ─────────────────────────────────────────────────────────────
+
+export interface EldenTaksitPlanSummary {
+  id: number;
+  customerName: string;
+  totalAmount: number;
+  installmentCount: number;
+  installmentAmount: number;
+  startDate: Date | string;
+}
+
+export interface EldenTaksitPaymentSummary {
+  installmentNo: number;
+  dueDate: Date | string;
+  amount: number;
+  paidAmount?: number | null;
+}
+
+const formatTRY = (amount: number) =>
+  amount.toLocaleString("tr-TR", { style: "currency", currency: "TRY" });
+
+const formatDate = (date: Date | string) =>
+  new Date(date).toLocaleDateString("tr-TR");
+
+function eldenTaksitEmailWrapper(content: string, year: number) {
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-width:100%;">
+          <tr>
+            <td style="padding:24px 32px;text-align:center;border-bottom:1px solid #e2e8f0;">
+              <span style="font-size:20px;font-weight:700;color:#0f172a;">Alpin Bisiklet</span>
+            </td>
+          </tr>
+          ${content}
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 32px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#94a3b8;">
+                © ${year} Alpin Bisiklet — Tüm hakları saklıdır.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendEldenTaksitCreatedEmail(
+  email: string,
+  name: string,
+  plan: EldenTaksitPlanSummary,
+) {
+  const year = new Date().getFullYear();
+  const content = `
+    <tr>
+      <td style="background:#0f172a;padding:32px;text-align:center;">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;">Taksit Planı</p>
+        <h1 style="margin:0;color:#f8fafc;font-size:24px;font-weight:700;">Taksit Planınız Oluşturuldu</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:32px;">
+        <p style="margin:0 0 20px;font-size:15px;color:#334155;">Merhaba <strong>${name}</strong>,</p>
+        <p style="margin:0 0 24px;font-size:14px;color:#475569;line-height:1.7;">
+          Elden taksit planınız başarıyla oluşturulmuştur. Aşağıda plan detaylarınızı bulabilirsiniz.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin:0 0 24px;">
+          <tr style="background:#f8fafc;">
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Toplam Tutar</td>
+            <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#0f172a;border-bottom:1px solid #e2e8f0;text-align:right;">${formatTRY(plan.totalAmount)}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Taksit Sayısı</td>
+            <td style="padding:12px 16px;font-size:14px;color:#334155;border-bottom:1px solid #e2e8f0;text-align:right;">${plan.installmentCount} ay</td>
+          </tr>
+          <tr style="background:#f8fafc;">
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Aylık Taksit</td>
+            <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#16a34a;border-bottom:1px solid #e2e8f0;text-align:right;">${formatTRY(plan.installmentAmount)}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;">İlk Vade Tarihi</td>
+            <td style="padding:12px 16px;font-size:14px;color:#334155;text-align:right;">${formatDate(plan.startDate)}</td>
+          </tr>
+        </table>
+        <p style="margin:0;font-size:13px;color:#94a3b8;">Her ay ödeme yaptığınızda bilgilendirme e-postası alacaksınız.</p>
+      </td>
+    </tr>`;
+  await sendCustomerEmail({
+    to: email,
+    subject: "Taksit Planınız Oluşturuldu — Alpin Bisiklet",
+    html: eldenTaksitEmailWrapper(content, year),
+  });
+}
+
+export async function sendEldenTaksitPaymentReceivedEmail(
+  email: string,
+  name: string,
+  payment: EldenTaksitPaymentSummary,
+  plan: EldenTaksitPlanSummary,
+) {
+  const year = new Date().getFullYear();
+  const totalPaid = (payment.paidAmount ?? payment.amount) + (payment.installmentNo - 1) * plan.installmentAmount;
+  const remaining = plan.totalAmount - totalPaid;
+  const nextInstallmentNo = payment.installmentNo + 1;
+  const content = `
+    <tr>
+      <td style="background:#0f172a;padding:32px;text-align:center;">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;">Ödeme Makbuzu</p>
+        <h1 style="margin:0;color:#f8fafc;font-size:24px;font-weight:700;">Ödemeniz Alındı</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:32px;">
+        <p style="margin:0 0 20px;font-size:15px;color:#334155;">Merhaba <strong>${name}</strong>,</p>
+        <p style="margin:0 0 24px;font-size:14px;color:#475569;line-height:1.7;">
+          ${payment.installmentNo}. taksit ödemeniz alındı. Teşekkür ederiz.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin:0 0 24px;">
+          <tr style="background:#f8fafc;">
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Ödenen Taksit</td>
+            <td style="padding:12px 16px;font-size:14px;color:#334155;border-bottom:1px solid #e2e8f0;text-align:right;">${payment.installmentNo}/${plan.installmentCount}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Ödenen Tutar</td>
+            <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#16a34a;border-bottom:1px solid #e2e8f0;text-align:right;">${formatTRY(payment.paidAmount ?? payment.amount)}</td>
+          </tr>
+          <tr style="background:#f8fafc;">
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Kalan Borç</td>
+            <td style="padding:12px 16px;font-size:14px;font-weight:700;color:${remaining > 0 ? "#dc2626" : "#16a34a"};border-bottom:1px solid #e2e8f0;text-align:right;">${formatTRY(Math.max(0, remaining))}</td>
+          </tr>
+          ${nextInstallmentNo <= plan.installmentCount ? `
+          <tr>
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;">Sonraki Vade</td>
+            <td style="padding:12px 16px;font-size:14px;color:#334155;text-align:right;">${payment.installmentNo + 1}. taksit</td>
+          </tr>` : `
+          <tr>
+            <td colspan="2" style="padding:12px 16px;font-size:13px;font-weight:600;color:#16a34a;text-align:center;">Tüm taksitler tamamlandı!</td>
+          </tr>`}
+        </table>
+      </td>
+    </tr>`;
+  await sendCustomerEmail({
+    to: email,
+    subject: "Ödemeniz Alındı — Alpin Bisiklet",
+    html: eldenTaksitEmailWrapper(content, year),
+  });
+}
+
+export async function sendEldenTaksitReminderEmail(
+  email: string,
+  name: string,
+  payment: EldenTaksitPaymentSummary,
+  plan: EldenTaksitPlanSummary,
+) {
+  const year = new Date().getFullYear();
+  const paidCount = payment.installmentNo - 1;
+  const remainingAmount = plan.totalAmount - paidCount * plan.installmentAmount;
+  const content = `
+    <tr>
+      <td style="background:#92400e;padding:32px;text-align:center;">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#fde68a;">Ödeme Hatırlatması</p>
+        <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700;">Taksit Ödeme Hatırlatması</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:32px;">
+        <p style="margin:0 0 20px;font-size:15px;color:#334155;">Merhaba <strong>${name}</strong>,</p>
+        <p style="margin:0 0 24px;font-size:14px;color:#475569;line-height:1.7;">
+          ${payment.installmentNo}. taksit ödemenizin vadesi yaklaşmaktadır. Lütfen ödemenizi zamanında gerçekleştirmeyi unutmayın.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin:0 0 24px;">
+          <tr style="background:#f8fafc;">
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Taksit No</td>
+            <td style="padding:12px 16px;font-size:14px;color:#334155;border-bottom:1px solid #e2e8f0;text-align:right;">${payment.installmentNo}/${plan.installmentCount}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Vade Tarihi</td>
+            <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#dc2626;border-bottom:1px solid #e2e8f0;text-align:right;">${formatDate(payment.dueDate)}</td>
+          </tr>
+          <tr style="background:#f8fafc;">
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Taksit Tutarı</td>
+            <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#0f172a;border-bottom:1px solid #e2e8f0;text-align:right;">${formatTRY(payment.amount)}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;">Toplam Kalan</td>
+            <td style="padding:12px 16px;font-size:14px;color:#334155;text-align:right;">${formatTRY(Math.max(0, remainingAmount))}</td>
+          </tr>
+        </table>
+        <p style="margin:0;font-size:13px;color:#94a3b8;">Ödemenizi yaptıktan sonra mağazamıza bildirmeniz yeterlidir.</p>
+      </td>
+    </tr>`;
+  await sendCustomerEmail({
+    to: email,
+    subject: "Taksit Ödeme Hatırlatması — Alpin Bisiklet",
+    html: eldenTaksitEmailWrapper(content, year),
+  });
+}
+
 export async function sendNewsletterEmail({
   to,
   name,

@@ -6,6 +6,7 @@ import { Package, MapPin, Heart, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useFavorites } from "@/hooks";
 
 export default function AccountPage() {
 	const { data: orders } = useQuery({
@@ -15,6 +16,9 @@ export default function AccountPage() {
 			return res.json();
 		},
 	});
+
+	const { data: favoritesData } = useFavorites();
+	const favoritesCount = favoritesData?.data?.length ?? 0;
 
 	const stats = [
 		{
@@ -32,7 +36,7 @@ export default function AccountPage() {
 		{
 			icon: Heart,
 			label: "Favoriler",
-			value: 0,
+			value: favoritesCount,
 			color: "text-red-600 bg-red-100",
 		},
 		{

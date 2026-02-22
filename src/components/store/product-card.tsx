@@ -2,19 +2,28 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductListItem } from "@/types";
 import { useCartStore } from "@/store/use-cart-store";
 import { useToast } from "@/hooks/use-toast";
+import { authClient } from "@/lib/auth-client";
+import { useFavoriteIds, useToggleFavorite } from "@/hooks";
 
 interface ProductCardProps {
 	product: ProductListItem;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+	const router = useRouter();
 	const { addItem } = useCartStore();
 	const { toast } = useToast();
+	const { data: session } = authClient.useSession();
+	const favoriteIds = useFavoriteIds();
+	const toggleFavorite = useToggleFavorite();
+
+	const isFavorited = favoriteIds.has(product.id);
 
 	const handleAddToCart = (e: React.MouseEvent) => {
 		e.preventDefault();
@@ -36,9 +45,22 @@ export function ProductCard({ product }: ProductCardProps) {
 	const handleFavorite = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
-		toast({
-			title: "Favorilere Eklendi",
-			description: `${product.name} favorilerinize eklendi.`,
+
+		if (!session?.user) {
+			router.push("/giris");
+			return;
+		}
+
+		toggleFavorite.mutate(product.id, {
+			onSuccess: (res) => {
+				toast({
+					title: res.removed ? "Favorilerden çıkarıldı" : "Favorilere eklendi",
+					description: product.name,
+				});
+			},
+			onError: () => {
+				toast({ title: "Bir hata oluştu", variant: "destructive" });
+			},
 		});
 	};
 
@@ -79,15 +101,21 @@ export function ProductCard({ product }: ProductCardProps) {
 					)}
 				</div>
 
-				{/* Favorite button - appears on hover */}
+				{/* Favorite button */}
 				<div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 z-10">
 					<Button
 						size="icon"
 						variant="secondary"
 						className="h-9 w-9 rounded-full shadow-lg backdrop-blur-sm bg-background/80 hover:text-destructive"
 						onClick={handleFavorite}
+						disabled={toggleFavorite.isPending}
+						aria-label={isFavorited ? "Favorilerden çıkar" : "Favorilere ekle"}
 					>
-						<Heart className="h-4 w-4" />
+						<Heart
+							className={`h-4 w-4 transition-colors ${
+								isFavorited ? "fill-destructive text-destructive" : ""
+							}`}
+						/>
 					</Button>
 				</div>
 			</div>

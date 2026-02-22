@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
@@ -8,9 +9,18 @@ import { Mail, ArrowLeft, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authClient } from "@/lib/auth-client";
 
 export default function ForgotPasswordPage() {
+	const router = useRouter();
+	const { data: session } = authClient.useSession();
 	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (session?.user) {
+			router.replace("/hesabim");
+		}
+	}, [session, router]);
 	const [error, setError] = useState("");
 	const [sent, setSent] = useState(false);
 

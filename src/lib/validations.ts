@@ -298,3 +298,99 @@ export const settingsSchema = z.object({
 });
 
 export type SettingsValues = z.infer<typeof settingsSchema>;
+
+// ============================================
+// ADRES SCHEMA'LARI
+// ============================================
+
+/** Türkiye telefon numarası: 05XX XXX XX XX (boşluklu veya boşluksuz) */
+const turkishPhoneSchema = z
+  .string()
+  .min(10, "Telefon numarası gerekli")
+  .refine(
+    (v) => /^0[5-9]\d[\d\s]{8,9}$/.test(v.replace(/\s/g, "").replace(/^(\d{4})(\d{3})(\d{2})(\d{2})$/, "$1 $2 $3 $4")),
+    "Geçerli bir Türkiye telefon numarası girin (05XX XXX XX XX)",
+  );
+
+export const createAddressSchema = z.object({
+  title: z.string().min(2, "Adres başlığı en az 2 karakter olmalı"),
+  firstName: z.string().min(2, "Ad en az 2 karakter olmalı"),
+  lastName: z.string().min(2, "Soyad en az 2 karakter olmalı"),
+  phone: z
+    .string()
+    .min(10, "Telefon numarası gerekli")
+    .refine((v) => /^\d[\d\s]{9,12}$/.test(v), "Geçerli bir telefon numarası girin"),
+  city: z.string().min(1, "İl seçiniz"),
+  district: z.string().min(1, "İlçe seçiniz"),
+  neighborhood: z.string().optional().or(z.literal("")),
+  address: z.string().min(5, "Adres en az 5 karakter olmalı"),
+  postalCode: z.string().optional().or(z.literal("")),
+});
+
+export const updateAddressSchema = createAddressSchema.partial();
+
+export type CreateAddressInput = z.infer<typeof createAddressSchema>;
+export type UpdateAddressInput = z.infer<typeof updateAddressSchema>;
+
+// ============================================
+// HESAP AYARLARI SCHEMA'LARI
+// ============================================
+
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, "Ad soyad en az 2 karakter olmalı"),
+  phone: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine(
+      (v) => !v || /^\d[\d\s]{9,12}$/.test(v),
+      "Geçerli bir telefon numarası girin",
+    ),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Mevcut şifre gerekli"),
+    newPassword: passwordSchema,
+    confirmPassword: z.string().min(1, "Şifreyi tekrar girin"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Şifreler eşleşmiyor",
+    path: ["confirmPassword"],
+  });
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+// ============================================
+// ELDEN TAKSİT SCHEMA'LARI
+// ============================================
+
+export const createEldenTaksitSchema = z.object({
+  customerName: z.string().min(2, "İsim gerekli"),
+  customerPhone: z.string().min(10, "Geçerli telefon gerekli"),
+  customerEmail: z.string().email().optional().or(z.literal("")),
+  userId: z.string().optional().or(z.literal("")),
+  productId: z.number().int().positive().optional().nullable(),
+  productNote: z.string().optional(),
+  totalAmount: z.number().positive("Tutar pozitif olmalı"),
+  installmentCount: z.number().int().min(1).max(60),
+  installmentAmount: z.number().positive(),
+  startDate: z.string(),
+  notes: z.string().optional(),
+});
+
+export const updateEldenTaksitSchema = createEldenTaksitSchema.partial().extend({
+  status: z.enum(["ACTIVE", "COMPLETED", "CANCELLED"]).optional(),
+});
+
+export const markInstallmentPaidSchema = z.object({
+  isPaid: z.boolean(),
+  paidAmount: z.number().positive().optional(),
+  paidAt: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type CreateEldenTaksitInput = z.infer<typeof createEldenTaksitSchema>;
+export type UpdateEldenTaksitInput = z.infer<typeof updateEldenTaksitSchema>;
+export type MarkInstallmentPaidInput = z.infer<typeof markInstallmentPaidSchema>;

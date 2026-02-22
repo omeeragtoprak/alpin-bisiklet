@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,10 +9,18 @@ import { User, Mail, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authClient } from "@/lib/auth-client";
 
 export default function RegisterPage() {
 	const router = useRouter();
+	const { data: session } = authClient.useSession();
 	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (session?.user) {
+			router.replace("/hesabim");
+		}
+	}, [session, router]);
 	const [error, setError] = useState("");
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

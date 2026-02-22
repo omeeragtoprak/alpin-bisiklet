@@ -30,15 +30,16 @@ model User {
   updatedAt          DateTime  @updatedAt
 
   // İlişkiler
-  sessions      Session[]
-  accounts      Account[]
-  addresses     Address[]
-  orders        Order[]
-  cart          Cart?
-  favorites     Favorite[]
-  reviews       Review[]
-  activityLogs  ActivityLog[]
-  twoFactor     TwoFactor?
+  sessions       Session[]
+  accounts       Account[]
+  addresses      Address[]
+  orders         Order[]
+  cart           Cart?
+  favorites      Favorite[]
+  reviews        Review[]
+  activityLogs   ActivityLog[]
+  twoFactor      TwoFactor?
+  eldenTaksitler EldenTaksit[]
 
   @@map("users")
 }
@@ -222,16 +223,17 @@ model Product {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  category    Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  brand       Brand?             @relation(fields: [brandId], references: [id], onDelete: SetNull)
-  images      ProductImage[]
-  videos      ProductVideo[]
-  attributes  ProductAttribute[]
-  variants    ProductVariant[]
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
-  favorites   Favorite[]
-  reviews     Review[]
+  category       Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brand          Brand?             @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  images         ProductImage[]
+  videos         ProductVideo[]
+  attributes     ProductAttribute[]
+  variants       ProductVariant[]
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  favorites      Favorite[]
+  reviews        Review[]
+  eldenTaksitler EldenTaksit[]
 
   @@index([categoryId])
   @@index([brandId])
@@ -654,4 +656,54 @@ model NewsletterSubscriber {
   subscribedAt DateTime @default(now())
 
   @@map("newsletter_subscribers")
+}
+
+// ============================================
+// ELDEN TAKSİT
+// ============================================
+
+enum EldenTaksitStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model EldenTaksit {
+  id                Int                  @id @default(autoincrement())
+  userId            String?
+  user              User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customerName      String
+  customerPhone     String
+  customerEmail     String?
+  productId         Int?
+  product           Product?             @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productNote       String?
+  totalAmount       Float
+  installmentCount  Int
+  installmentAmount Float
+  startDate         DateTime
+  notes             String?
+  status            EldenTaksitStatus    @default(ACTIVE)
+  installments      EldenTaksitPayment[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@map("elden_taksit")
+}
+
+model EldenTaksitPayment {
+  id              Int         @id @default(autoincrement())
+  eldenTaksitId   Int
+  eldenTaksit     EldenTaksit @relation(fields: [eldenTaksitId], references: [id], onDelete: Cascade)
+  installmentNo   Int
+  dueDate         DateTime
+  amount          Float
+  isPaid          Boolean     @default(false)
+  paidAt          DateTime?
+  paidAmount      Float?
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("elden_taksit_payments")
 }
