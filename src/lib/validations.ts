@@ -206,8 +206,10 @@ export const createPageSchema = z.object({
   title: z.string().min(2, "Baslik en az 2 karakter olmali"),
   slug: z
     .string()
-    .regex(/^[a-z0-9-]+$/, "Slug sadece kucuk harf, rakam ve tire icerebilir")
-    .optional(),
+    .regex(/^[a-z0-9-]*$/, "Slug sadece kucuk harf, rakam ve tire icerebilir")
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v === "" ? undefined : v)),
   content: z.string().min(1, "Icerik gerekli"),
   metaTitle: z.string().optional().nullable(),
   metaDescription: z.string().optional().nullable(),
@@ -272,3 +274,27 @@ export const updateCouponSchema = createCouponSchema.partial();
 /** Kupon tipleri */
 export type CreateCouponInput = z.infer<typeof createCouponSchema>;
 export type UpdateCouponInput = z.infer<typeof updateCouponSchema>;
+
+// ============================================
+// AYARLAR SCHEMA'LARI
+// ============================================
+
+/** Mağaza ayarları schema'sı (tüm değerler string olarak saklanır) */
+export const settingsSchema = z.object({
+  store_name: z.string(),
+  store_email: z.string(),
+  store_phone: z.string(),
+  store_address: z.string(),
+  tax_rate: z.string(),
+  payment_iyzico_enabled: z.string(),
+  payment_bank_transfer_enabled: z.string(),
+  payment_cod_enabled: z.string(),
+  shipping_free_threshold: z.string(),
+  shipping_default_cost: z.string(),
+  shipping_estimated_days: z.string(),
+  seo_title: z.string(),
+  seo_description: z.string(),
+  seo_keywords: z.string(),
+});
+
+export type SettingsValues = z.infer<typeof settingsSchema>;

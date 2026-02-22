@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -14,20 +15,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { toast } from "@/hooks/use-toast";
-import { z } from "zod";
+import { createBlogSchema } from "@/lib/validations";
 
-const blogFormSchema = z.object({
-    title: z.string().min(1, "Başlık gerekli"),
-    slug: z.string().optional(),
-    content: z.string().min(1, "İçerik gerekli"),
-    excerpt: z.string().optional(),
-    coverImage: z.string().optional(),
-    metaTitle: z.string().optional(),
-    metaDescription: z.string().optional(),
-    isPublished: z.boolean(),
-});
-
-type BlogFormValues = z.infer<typeof blogFormSchema>;
+// Input type = raw form field values; Output type = validated + transformed values
+type BlogFormInput = z.input<typeof createBlogSchema>;
+type BlogFormOutput = z.infer<typeof createBlogSchema>;
 
 interface BlogFormProps {
     initialData?: {
@@ -55,8 +47,8 @@ export function BlogForm({ initialData }: BlogFormProps) {
         watch,
         setValue,
         formState: { errors },
-    } = useForm<BlogFormValues>({
-        resolver: zodResolver(blogFormSchema),
+    } = useForm<BlogFormInput, unknown, BlogFormOutput>({
+        resolver: zodResolver(createBlogSchema),
         defaultValues: initialData
             ? {
                 title: initialData.title,
@@ -93,7 +85,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
     const isPublishedValue = watch("isPublished");
 
     const saveMutation = useMutation({
-        mutationFn: async (data: BlogFormValues) => {
+        mutationFn: async (data: BlogFormOutput) => {
             const url = isEditing ? `/api/blog/${initialData.id}` : "/api/blog";
             const method = isEditing ? "PATCH" : "POST";
             const res = await fetch(url, {
@@ -117,7 +109,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
         },
     });
 
-    function onSubmit(data: BlogFormValues) {
+    function onSubmit(data: BlogFormOutput) {
         saveMutation.mutate(data);
     }
 

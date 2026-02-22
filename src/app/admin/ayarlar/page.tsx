@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "motion/react";
 import { Settings, Save, Store, CreditCard, Truck, Search as SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/admin/page-header";
 import { CardSkeleton } from "@/components/admin/loading-skeleton";
 import { toast } from "@/hooks/use-toast";
+import { settingsSchema, type SettingsValues } from "@/lib/validations";
 
 const groupConfig: Record<string, { title: string; description: string; icon: typeof Store }> = {
     general: { title: "Genel Ayarlar", description: "Mağaza genel bilgileri", icon: Store },
@@ -21,7 +23,7 @@ const groupConfig: Record<string, { title: string; description: string; icon: ty
     seo: { title: "SEO Ayarları", description: "Arama motoru optimizasyonu", icon: SearchIcon },
 };
 
-const defaultSettings: Record<string, Array<{ key: string; label: string; type: string; placeholder?: string }>> = {
+const defaultSettings: Record<string, Array<{ key: keyof SettingsValues; label: string; type: string; placeholder?: string }>> = {
     general: [
         { key: "store_name", label: "Mağaza Adı", type: "string", placeholder: "Alpin Bisiklet" },
         { key: "store_email", label: "İletişim E-posta", type: "string", placeholder: "info@alpinbisiklet.com" },
@@ -47,28 +49,53 @@ const defaultSettings: Record<string, Array<{ key: string; label: string; type: 
 };
 
 export default function SettingsPage() {
-    const [values, setValues] = useState<Record<string, string>>({});
     const queryClient = useQueryClient();
+
+    const emptyDefaults: SettingsValues = {
+        store_name: "",
+        store_email: "",
+        store_phone: "",
+        store_address: "",
+        tax_rate: "",
+        payment_iyzico_enabled: "false",
+        payment_bank_transfer_enabled: "false",
+        payment_cod_enabled: "false",
+        shipping_free_threshold: "",
+        shipping_default_cost: "",
+        shipping_estimated_days: "",
+        seo_title: "",
+        seo_description: "",
+        seo_keywords: "",
+    };
+
+    const form = useForm<SettingsValues>({
+        resolver: zodResolver(settingsSchema),
+        defaultValues: emptyDefaults,
+    });
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin-settings"],
         queryFn: async () => {
             const res = await fetch("/api/settings");
-            const json = await res.json();
-            // Flatten grouped settings into a single object
-            const flat: Record<string, string> = {};
-            for (const group of Object.values(json.data || {})) {
-                for (const [k, v] of Object.entries(group as Record<string, string>)) {
-                    flat[k] = v;
-                }
-            }
-            setValues(flat);
-            return json;
+            return res.json();
         },
     });
 
+    useEffect(() => {
+        if (data?.data) {
+            const flat: Partial<SettingsValues> = {};
+            for (const group of Object.values(data.data as Record<string, Record<string, string>>)) {
+                for (const [k, v] of Object.entries(group)) {
+                    (flat as Record<string, string>)[k] = v;
+                }
+            }
+            form.reset({ ...emptyDefaults, ...flat });
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data]);
+
     const saveMutation = useMutation({
-        mutationFn: async () => {
+        mutationFn: async (values: SettingsValues) => {
             const settingsArray = Object.entries(values).map(([key, value]) => {
                 const group = key.startsWith("payment_") ? "payment"
                     : key.startsWith("shipping_") ? "shipping"
@@ -100,7 +127,6 @@ export default function SettingsPage() {
         <div className="space-y-6">
             <PageHeader title="Ayarlar" description="Mağaza yapılandırması ve tercihler" />
 
-            {/* Settings Tabs */}
             {isLoading ? (
                 <CardSkeleton />
             ) : (
@@ -130,22 +156,27 @@ export default function SettingsPage() {
                                             <Label htmlFor={setting.key} className="font-medium">{setting.label}</Label>
                                             <div className="col-span-2">
                                                 {setting.type === "boolean" ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <Switch
-                                                            id={setting.key}
-                                                            checked={values[setting.key] === "true" || values[setting.key] === "1"}
-                                                            onCheckedChange={(checked) => setValues({ ...values, [setting.key]: checked ? "true" : "false" })}
-                                                        />
-                                                        <span className="text-sm text-muted-foreground">
-                                                            {values[setting.key] === "true" || values[setting.key] === "1" ? "Aktif" : "Pasif"}
-                                                        </span>
-                                                    </div>
+                                                    <Controller
+                                                        name={setting.key}
+                                                        control={form.control}
+                                                        render={({ field }) => (
+                                                            <div className="flex items-center gap-2">
+                                                                <Switch
+                                                                    id={setting.key}
+                                                                    checked={field.value === "true" || field.value === "1"}
+                                                                    onCheckedChange={(checked) => field.onChange(checked ? "true" : "false")}
+                                                                />
+                                                                <span className="text-sm text-muted-foreground">
+                                                                    {field.value === "true" || field.value === "1" ? "Aktif" : "Pasif"}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    />
                                                 ) : (
                                                     <Input
                                                         id={setting.key}
                                                         type={setting.type === "number" ? "number" : "text"}
-                                                        value={values[setting.key] || ""}
-                                                        onChange={(e) => setValues({ ...values, [setting.key]: e.target.value })}
+                                                        {...form.register(setting.key)}
                                                         placeholder={setting.placeholder}
                                                     />
                                                 )}
@@ -154,7 +185,10 @@ export default function SettingsPage() {
                                     ))}
 
                                     <div className="pt-4 border-t">
-                                        <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+                                        <Button
+                                            onClick={form.handleSubmit((values) => saveMutation.mutate(values))}
+                                            disabled={saveMutation.isPending}
+                                        >
                                             <Save className="h-4 w-4 mr-2" aria-hidden="true" />
                                             {saveMutation.isPending ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
                                         </Button>
