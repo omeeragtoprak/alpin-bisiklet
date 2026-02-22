@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
 	Filter,
@@ -11,6 +11,7 @@ import {
 	X,
 	ChevronDown,
 	Search,
+	Bike,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -41,6 +42,7 @@ import {
 } from "@/components/ui/sheet";
 import { useCartStore } from "@/store/use-cart-store";
 import { Separator } from "@/components/ui/separator";
+import { BicycleFinder } from "@/components/store/bicycle-finder/bicycle-finder";
 
 interface FilterState {
 	search: string;
@@ -51,6 +53,8 @@ interface FilterState {
 	inStock: boolean;
 	sort: string;
 	page: number;
+	riderHeight: number;
+	riderInseam: number;
 }
 
 function FilterSidebar({
@@ -254,6 +258,7 @@ export default function ProductsPage() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const [view, setView] = useState<"grid" | "list">("grid");
+	const [bicycleFinderOpen, setBicycleFinderOpen] = useState(false);
 	const [filters, setFiltersState] = useState<FilterState>({
 		search: searchParams.get("search") || "",
 		categoryId: searchParams.get("categoryId") || "",
@@ -263,6 +268,8 @@ export default function ProductsPage() {
 		inStock: false,
 		sort: "newest",
 		page: 1,
+		riderHeight: 0,
+		riderInseam: 0,
 	});
 
 	const setFilters = useCallback((partial: Partial<FilterState>) => {
@@ -279,6 +286,17 @@ export default function ProductsPage() {
 			return json.data || [];
 		},
 	});
+
+	// Navbar'dan gelen ?kategori=slug parametresini categoryId'ye çevir
+	const kategoriSlug = searchParams.get("kategori");
+	useEffect(() => {
+		if (!categoriesData || !categoriesData.length) return;
+		if (!kategoriSlug) return;
+		const cat = categoriesData.find((c: any) => c.slug === kategoriSlug);
+		if (cat && cat.id.toString() !== filters.categoryId) {
+			setFiltersState((prev) => ({ ...prev, categoryId: cat.id.toString(), page: 1 }));
+		}
+	}, [kategoriSlug, categoriesData]);
 
 	// Fetch brands — seçili kategorideki ürünlerin markaları göster
 	const { data: brandsData, isLoading: brandsLoading } = useQuery({
@@ -306,6 +324,8 @@ export default function ProductsPage() {
 				params.set("categoryId", filters.categoryId);
 			if (filters.brandId) params.set("brandId", filters.brandId);
 			if (filters.inStock) params.set("isActive", "true");
+			if (filters.riderHeight > 0) params.set("riderHeight", filters.riderHeight.toString());
+			if (filters.riderInseam > 0) params.set("riderInseam", filters.riderInseam.toString());
 
 			const res = await fetch(`/api/products?${params}`);
 			return res.json();
@@ -318,6 +338,7 @@ export default function ProductsPage() {
 		filters.minPrice > 0,
 		filters.maxPrice < 50000,
 		filters.inStock,
+		filters.riderHeight > 0,
 	].filter(Boolean).length;
 
 	const clearFilters = () => {
@@ -330,10 +351,32 @@ export default function ProductsPage() {
 			inStock: false,
 			sort: "newest",
 			page: 1,
+			riderHeight: 0,
+			riderInseam: 0,
 		});
 	};
 
+	const selectedCategoryType = categoriesData?.find(
+		(c: any) => c.id.toString() === filters.categoryId
+	)?.type ?? "GENERAL";
+
+	// Bisiklet kategorisine girilince dialogu otomatik aç (yalnızca ilk ziyarette)
+	const prevCategoryTypeRef = useRef<string>("GENERAL");
+	useEffect(() => {
+		if (
+			selectedCategoryType === "BICYCLE" &&
+			prevCategoryTypeRef.current !== "BICYCLE"
+		) {
+			const alreadySeen = localStorage.getItem("alpin_bike_finder_seen");
+			if (!alreadySeen) {
+				setBicycleFinderOpen(true);
+			}
+		}
+		prevCategoryTypeRef.current = selectedCategoryType;
+	}, [selectedCategoryType]);
+
 	return (
+		<>
 		<div className="container mx-auto px-4 py-8">
 			{/* Header */}
 			<div className="mb-8">
@@ -392,6 +435,17 @@ export default function ProductsPage() {
 							/>
 						</div>
 						<div className="flex gap-2">
+							{/* Bisiklet Bulucu Butonu */}
+							{selectedCategoryType === "BICYCLE" && (
+								<Button
+									variant="outline"
+									onClick={() => setBicycleFinderOpen(true)}
+									className="border-primary/50 text-primary hover:bg-primary/10"
+								>
+									<Bike className="h-4 w-4 mr-2" />
+									Bisiklet Bulucu
+								</Button>
+							)}
 							{/* Mobile Filter Button */}
 							<Sheet>
 								<SheetTrigger asChild>
@@ -508,6 +562,21 @@ export default function ProductsPage() {
 											setFilters({ brandId: "" })
 										}
 										aria-label="Marka filtresini kaldır"
+									>
+										<X className="h-3 w-3" />
+									</button>
+								</span>
+							)}
+							{filters.riderHeight > 0 && (
+								<span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs px-2 py-1 rounded-full">
+									<Bike className="h-3 w-3" />
+									Boy: {filters.riderHeight} cm / Bacak: {filters.riderInseam} cm
+									<button
+										type="button"
+										onClick={() =>
+											setFilters({ riderHeight: 0, riderInseam: 0 })
+										}
+										aria-label="Ölçü filtresini kaldır"
 									>
 										<X className="h-3 w-3" />
 									</button>
@@ -702,5 +771,12 @@ export default function ProductsPage() {
 				</div>
 			</div>
 		</div>
+
+		<BicycleFinder
+			open={bicycleFinderOpen}
+			onOpenChange={setBicycleFinderOpen}
+			onFilter={(h, i) => setFilters({ riderHeight: h, riderInseam: i })}
+		/>
+		</>
 	);
 }

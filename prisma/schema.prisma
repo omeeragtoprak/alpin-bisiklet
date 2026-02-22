@@ -132,17 +132,24 @@ model Address {
 // KATEGORİ
 // ============================================
 
+enum CategoryType {
+  BICYCLE
+  CLOTHING
+  GENERAL
+}
+
 model Category {
-  id          Int       @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   name        String
-  slug        String    @unique
+  slug        String       @unique
   description String?
   image       String?
   parentId    Int?
-  order       Int       @default(0)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  order       Int          @default(0)
+  isActive    Boolean      @default(true)
+  type        CategoryType @default(GENERAL)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   parent   Category?  @relation("CategoryToCategory", fields: [parentId], references: [id], onDelete: SetNull)
   children Category[] @relation("CategoryToCategory")
@@ -274,19 +281,24 @@ model ProductAttribute {
 }
 
 model ProductVariant {
-  id        Int      @id @default(autoincrement())
-  productId Int
-  name      String   // Örn: "Kırmızı - L"
-  sku       String?  @unique
-  barcode   String?  @unique
-  price     Float?
-  stock     Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  name        String   // Örn: "Kırmızı - L"
+  sku         String?  @unique
+  barcode     String?  @unique
+  price       Float?
+  stock       Int      @default(0)
+  isActive    Boolean  @default(true)
+  sizeLabel   String?  // "XS", "S", "M", "L", "XL", "XXL"
+  minHeight   Float?   // Önerilen min boy (cm) — yalnızca bisikletler
+  maxHeight   Float?   // Önerilen max boy (cm) — yalnızca bisikletler
+  minInseam   Float?   // Önerilen min bacak boyu (cm) — yalnızca bisikletler
+  maxInseam   Float?   // Önerilen max bacak boyu (cm) — yalnızca bisikletler
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  cartItems CartItem[]
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
   orderItems OrderItem[]
 
   @@map("product_variants")

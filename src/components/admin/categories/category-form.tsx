@@ -66,6 +66,7 @@ export function CategoryForm({ initialData }: CategoryFormProps) {
                 image: initialData.image || "",
                 parentId: initialData.parentId || null,
                 isActive: initialData.isActive,
+                type: initialData.type ?? "GENERAL",
             }
             : {
                 name: "",
@@ -74,6 +75,7 @@ export function CategoryForm({ initialData }: CategoryFormProps) {
                 image: "",
                 parentId: null,
                 isActive: true,
+                type: "GENERAL" as const,
             },
     });
 
@@ -230,6 +232,34 @@ export function CategoryForm({ initialData }: CategoryFormProps) {
                                 <CardTitle>Ayarlar</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="type"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Ürün Tipi</FormLabel>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                value={field.value}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Ürün tipi seçin" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="GENERAL">Genel</SelectItem>
+                                                    <SelectItem value="BICYCLE">Bisiklet</SelectItem>
+                                                    <SelectItem value="CLOTHING">Kıyafet</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormDescription>
+                                                Bisiklet: çerçeve boyutu yönetimi. Kıyafet: beden yönetimi.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                 <FormField
                                     control={form.control}
                                     name="parentId"

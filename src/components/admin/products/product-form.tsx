@@ -126,9 +126,19 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
         },
     });
 
+    const selectedCategory = categories?.data?.find((c: any) => c.id === form.watch("categoryId"));
+    const categoryType: "BICYCLE" | "CLOTHING" | "GENERAL" = selectedCategory?.type ?? "GENERAL";
+
     const onSubmit = async (data: CreateProductInput) => {
         try {
             setLoading(true);
+            // BICYCLE/CLOTHING modunda name alanı sizeLabel'dan gelir
+            if (categoryType !== "GENERAL" && data.variants) {
+                data.variants = data.variants.map((v) => ({
+                    ...v,
+                    name: v.sizeLabel || v.name || "Beden",
+                }));
+            }
             if (initialData) {
                 // Update
                 const res = await fetch(`/api/products/${initialData.id}`, {
@@ -240,96 +250,292 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>Varyantlar</CardTitle>
+                                <CardTitle>
+                                    {categoryType === "BICYCLE" ? "Çerçeve Bedenleri" : categoryType === "CLOTHING" ? "Kıyafet Bedenleri" : "Varyantlar"}
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
                                     {fields.map((field, index) => (
                                         <div
                                             key={field.id}
-                                            className="flex items-end gap-4 p-4 border rounded-lg"
+                                            className="p-4 border rounded-lg space-y-3"
                                         >
-                                            <FormField
-                                                control={form.control}
-                                                name={`variants.${index}.name`}
-                                                render={({ field }) => (
-                                                    <FormItem className="flex-1">
-                                                        <FormLabel className={index !== 0 ? "sr-only" : ""}>
-                                                            Varyant Adı
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Örn: Kırmızı - L" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name={`variants.${index}.stock`}
-                                                render={({ field }) => (
-                                                    <FormItem className="w-24">
-                                                        <FormLabel className={index !== 0 ? "sr-only" : ""}>
-                                                            Stok
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                type="number"
-                                                                {...field}
-                                                                onChange={(e) =>
-                                                                    field.onChange(parseInt(e.target.value))
-                                                                }
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name={`variants.${index}.price`}
-                                                render={({ field }) => (
-                                                    <FormItem className="w-32">
-                                                        <FormLabel className={index !== 0 ? "sr-only" : ""}>
-                                                            Fiyat (+/-)
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                type="number"
-                                                                {...field}
-                                                                onChange={(e) =>
-                                                                    field.onChange(parseFloat(e.target.value))
-                                                                }
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="icon"
-                                                onClick={() => remove(index)}
-                                            >
-                                                <Trash className="h-4 w-4" />
-                                            </Button>
+                                            {categoryType === "BICYCLE" ? (
+                                                <>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium text-muted-foreground">Beden #{index + 1}</span>
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="icon"
+                                                            onClick={() => remove(index)}
+                                                        >
+                                                            <Trash className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`variants.${index}.sizeLabel`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Çerçeve Boyutu</FormLabel>
+                                                                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Beden seç" />
+                                                                            </SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {["XS", "S", "M", "L", "XL"].map((s) => (
+                                                                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`variants.${index}.stock`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Stok</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`variants.${index}.minHeight`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Min Boy (cm)</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input type="number" placeholder="150" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)} value={field.value ?? ""} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`variants.${index}.maxHeight`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Max Boy (cm)</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input type="number" placeholder="165" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)} value={field.value ?? ""} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`variants.${index}.minInseam`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Min Bacak Boyu (cm)</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input type="number" placeholder="65" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)} value={field.value ?? ""} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`variants.${index}.maxInseam`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Max Bacak Boyu (cm)</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input type="number" placeholder="75" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)} value={field.value ?? ""} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`variants.${index}.name`}
+                                                        render={({ field }) => (
+                                                            <FormItem className="hidden">
+                                                                <FormControl>
+                                                                    <Input {...field} />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </>
+                                            ) : categoryType === "CLOTHING" ? (
+                                                <>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium text-muted-foreground">Beden #{index + 1}</span>
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="icon"
+                                                            onClick={() => remove(index)}
+                                                        >
+                                                            <Trash className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-3">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`variants.${index}.sizeLabel`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Beden</FormLabel>
+                                                                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Beden seç" />
+                                                                            </SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map((s) => (
+                                                                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`variants.${index}.stock`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Stok</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`variants.${index}.price`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Fiyat (TL)</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input type="number" placeholder="Opsiyonel" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)} value={field.value ?? ""} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`variants.${index}.name`}
+                                                        render={({ field }) => (
+                                                            <FormItem className="hidden">
+                                                                <FormControl>
+                                                                    <Input {...field} />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <div className="flex items-end gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`variants.${index}.name`}
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex-1">
+                                                                <FormLabel className={index !== 0 ? "sr-only" : ""}>
+                                                                    Varyant Adı
+                                                                </FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="Örn: Kırmızı - L" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`variants.${index}.stock`}
+                                                        render={({ field }) => (
+                                                            <FormItem className="w-24">
+                                                                <FormLabel className={index !== 0 ? "sr-only" : ""}>
+                                                                    Stok
+                                                                </FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        type="number"
+                                                                        {...field}
+                                                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`variants.${index}.price`}
+                                                        render={({ field }) => (
+                                                            <FormItem className="w-32">
+                                                                <FormLabel className={index !== 0 ? "sr-only" : ""}>
+                                                                    Fiyat (+/-)
+                                                                </FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        type="number"
+                                                                        {...field}
+                                                                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        onClick={() => remove(index)}
+                                                    >
+                                                        <Trash className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        onClick={() =>
-                                            append({
-                                                name: "",
-                                                stock: 0,
-                                                isActive: true,
-                                                price: 0,
-                                            })
-                                        }
+                                        onClick={() => {
+                                            if (categoryType === "BICYCLE") {
+                                                append({ name: "beden", stock: 0, isActive: true, sizeLabel: undefined, minHeight: undefined, maxHeight: undefined, minInseam: undefined, maxInseam: undefined });
+                                            } else if (categoryType === "CLOTHING") {
+                                                append({ name: "beden", stock: 0, isActive: true, sizeLabel: undefined, price: undefined });
+                                            } else {
+                                                append({ name: "", stock: 0, isActive: true, price: 0 });
+                                            }
+                                        }}
                                     >
                                         <Plus className="mr-2 h-4 w-4" />
-                                        Varyant Ekle
+                                        {categoryType === "BICYCLE" ? "Çerçeve Boyutu Ekle" : categoryType === "CLOTHING" ? "Beden Ekle" : "Varyant Ekle"}
                                     </Button>
                                 </div>
                             </CardContent>

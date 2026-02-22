@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
 		const isNew = searchParams.get("isNew");
 		const hasDiscount = searchParams.get("hasDiscount");
 		const orderBy = searchParams.get("orderBy");
+		const riderHeight = searchParams.get("riderHeight") ? Number(searchParams.get("riderHeight")) : null;
+		const riderInseam = searchParams.get("riderInseam") ? Number(searchParams.get("riderInseam")) : null;
 
 		const skip = (page - 1) * limit;
 
@@ -38,6 +40,15 @@ export async function GET(request: NextRequest) {
 		if (isFeatured !== null) where.isFeatured = isFeatured === "true";
 		if (isNew !== null) where.isNew = isNew === "true";
 		if (hasDiscount === "true") where.comparePrice = { not: null };
+
+		if (riderHeight || riderInseam) {
+			where.variants = {
+				some: {
+					...(riderHeight && { minHeight: { lte: riderHeight }, maxHeight: { gte: riderHeight } }),
+					...(riderInseam && { minInseam: { lte: riderInseam }, maxInseam: { gte: riderInseam } }),
+				},
+			};
+		}
 
 		// Determine ordering
 		let orderByClause: any = { createdAt: "desc" };
@@ -124,10 +135,15 @@ export async function POST(request: NextRequest) {
 						variants: {
 							create: variants.map((v) => ({
 								name: v.name,
-								sku: v.sku || "",
-								price: v.price || 0,
+								sku: v.sku || undefined,
+								price: v.price || undefined,
 								stock: v.stock || 0,
 								isActive: v.isActive ?? true,
+								sizeLabel: v.sizeLabel || undefined,
+								minHeight: v.minHeight || undefined,
+								maxHeight: v.maxHeight || undefined,
+								minInseam: v.minInseam || undefined,
+								maxInseam: v.maxInseam || undefined,
 							})),
 						},
 					}

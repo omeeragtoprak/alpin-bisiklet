@@ -56,14 +56,41 @@ export async function PATCH(
 
 		const body = await request.json();
 		const validated = updateProductSchema.parse(body);
+		const { variants, images, ...productData } = validated as any;
+
+		// Variant upsert: sil ve yeniden oluştur
+		if (variants !== undefined) {
+			await prisma.productVariant.deleteMany({ where: { productId: numId } });
+		}
 
 		const product = await prisma.product.update({
 			where: { id: numId },
-			data: validated as any,
+			data: {
+				...productData,
+				...(variants !== undefined && variants.length > 0
+					? {
+						variants: {
+							create: variants.map((v: any) => ({
+								name: v.name,
+								sku: v.sku || undefined,
+								price: v.price || undefined,
+								stock: v.stock || 0,
+								isActive: v.isActive ?? true,
+								sizeLabel: v.sizeLabel || undefined,
+								minHeight: v.minHeight || undefined,
+								maxHeight: v.maxHeight || undefined,
+								minInseam: v.minInseam || undefined,
+								maxInseam: v.maxInseam || undefined,
+							})),
+						},
+					}
+					: {}),
+			},
 			include: {
 				category: true,
 				brand: true,
 				images: true,
+				variants: true,
 			},
 		});
 

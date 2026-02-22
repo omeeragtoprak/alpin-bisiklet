@@ -42,6 +42,11 @@ export const productVariantSchema = z.object({
   price: z.number().positive().optional(),
   stock: z.number().int().nonnegative().default(0),
   isActive: z.boolean().default(true),
+  sizeLabel: z.string().optional(),
+  minHeight: z.number().positive().optional(),
+  maxHeight: z.number().positive().optional(),
+  minInseam: z.number().positive().optional(),
+  maxInseam: z.number().positive().optional(),
 });
 
 /** Ürün oluşturma schema'sı */
@@ -95,6 +100,7 @@ export const createCategorySchema = z.object({
   parentId: z.number().int().positive().optional().nullable(),
   isActive: z.boolean().default(true),
   order: z.number().int().default(0),
+  type: z.enum(["BICYCLE", "CLOTHING", "GENERAL"]).default("GENERAL"),
 });
 
 /** Kategori güncelleme schema'sı */
