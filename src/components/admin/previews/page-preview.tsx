@@ -56,14 +56,13 @@ export function PagePreview({ title, content }: PagePreviewProps) {
           )}
           {content ? (
             <div
-              className={`text-gray-700 whitespace-pre-wrap ${
-                view === "mobile" ? "text-sm" : "text-base"
+              className={`prose prose-neutral max-w-none ${
+                view === "mobile" ? "prose-sm" : ""
               }`}
-            >
-              {content}
-            </div>
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
           ) : (
-            <p className="text-gray-400 text-sm">Icerik yazin...</p>
+            <p className="text-gray-400 text-sm italic">İçerik yazın...</p>
           )}
         </div>
       </CardContent>

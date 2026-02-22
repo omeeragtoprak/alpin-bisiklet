@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -168,12 +169,12 @@ export function BlogForm({ initialData }: BlogFormProps) {
                             </div>
 
                             <div>
-                                <Label htmlFor="blog-content">İçerik *</Label>
-                                <Textarea
-                                    id="blog-content"
-                                    {...register("content")}
-                                    placeholder="Blog yazısının içeriği..."
-                                    className="min-h-[300px]"
+                                <Label>İçerik *</Label>
+                                <RichTextEditor
+                                    value={watch("content") || ""}
+                                    onChange={(html) => setValue("content", html)}
+                                    placeholder="Blog yazısının içeriğini yazın..."
+                                    minHeight="320px"
                                 />
                                 {errors.content && (
                                     <p className="text-destructive text-sm mt-1">{errors.content.message}</p>
