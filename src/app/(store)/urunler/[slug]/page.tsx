@@ -26,11 +26,16 @@ export default async function ProductDetailPage({ params }: Props) {
 			sku: true,
 			barcode: true,
 			weight: true,
+			model3dUrl: true,
 			brand: { select: { name: true } },
-			category: { select: { id: true, name: true, slug: true } },
+			category: { select: { id: true, name: true, slug: true, type: true } },
 			images: {
 				orderBy: { order: "asc" },
 				select: { id: true, url: true, alt: true },
+			},
+			videos: {
+				orderBy: { order: "asc" },
+				select: { id: true, url: true, thumbnail: true, title: true },
 			},
 			variants: {
 				select: { id: true, name: true, sizeLabel: true },

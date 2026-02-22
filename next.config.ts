@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "100mb",
+    },
+    proxyClientMaxBodySize: "100mb", // 100MB — API upload route'ları için (middleware body limit)
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "alpinbisiklet.com" },

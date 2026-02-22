@@ -110,6 +110,7 @@ export default function SettingsPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ settings: settingsArray }),
             });
+            if (!res.ok) throw new Error((await res.json())?.error || "Kayıt başarısız");
             return res.json();
         },
         onSuccess: () => {

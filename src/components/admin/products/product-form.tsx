@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Loader2, Trash, Plus } from "lucide-react";
+import { Loader2, Trash, Plus, Upload, X, Box, Film } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,8 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ImageUpload } from "@/components/ui/image-upload";
-import { createProductSchema, CreateProductInput } from "@/lib/validations";
+import { createProductSchema, CreateProductInput, productVideoSchema } from "@/lib/validations";
+type ProductVideoInput = z.infer<typeof productVideoSchema>;
 import { ProductPreviewCard } from "@/components/admin/previews/product-preview-card";
 
 // Schema'yı genişletmemiz gerekebilir ama şimdilik createProductSchema kullanıyoruz.
@@ -47,6 +48,8 @@ interface ProductFormProps {
 export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [videoUploading, setVideoUploading] = useState(false);
+    const [model3dUploading, setModel3dUploading] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(createProductSchema),
@@ -60,22 +63,35 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
                     ? parseFloat(initialData.comparePrice.toString())
                     : undefined,
                 cost: initialData.cost ? parseFloat(initialData.cost.toString()) : undefined,
-                sku: initialData.sku || "",
-                barcode: initialData.barcode || "",
-                stock: initialData.stock,
-                lowStockAlert: initialData.lowStockAlert,
-                trackStock: initialData.trackStock,
-                weight: initialData.weight,
-                width: initialData.width,
-                height: initialData.height,
-                length: initialData.length,
-                categoryId: initialData.categoryId,
-                brandId: initialData.brandId,
+                sku: initialData.sku ?? "",
+                barcode: initialData.barcode ?? "",
+                stock: initialData.stock ?? 0,
+                lowStockAlert: initialData.lowStockAlert ?? 5,
+                trackStock: initialData.trackStock ?? true,
+                weight: initialData.weight ?? undefined,
+                width: initialData.width ?? undefined,
+                height: initialData.height ?? undefined,
+                length: initialData.length ?? undefined,
+                categoryId: initialData.categoryId ?? undefined,
+                brandId: initialData.brandId ?? undefined,
                 isActive: initialData.isActive,
                 isFeatured: initialData.isFeatured,
                 isNew: initialData.isNew,
                 images: initialData.images || [],
-                variants: initialData.variants || [],
+                videos: initialData.videos || [],
+                model3dUrl: initialData.model3dUrl ?? "",
+                variants: (initialData.variants || []).map((v: any) => ({
+                    ...v,
+                    name: v.name || "beden",
+                    sku: v.sku ?? "",
+                    barcode: v.barcode ?? undefined,
+                    price: v.price ?? undefined,
+                    sizeLabel: v.sizeLabel ?? undefined,
+                    minHeight: v.minHeight ?? undefined,
+                    maxHeight: v.maxHeight ?? undefined,
+                    minInseam: v.minInseam ?? undefined,
+                    maxInseam: v.maxInseam ?? undefined,
+                })),
             }
             : {
                 name: "",
@@ -99,6 +115,8 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
                 isFeatured: false,
                 isNew: false,
                 images: [],
+                videos: [],
+                model3dUrl: "",
                 variants: [],
             },
     });
@@ -169,7 +187,7 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.error("[ProductForm] Zod validation errors:", errors))} className="space-y-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Sol Kolon - Temel Bilgiler */}
                     <div className="lg:col-span-2 space-y-8">
@@ -245,6 +263,148 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
                                         </FormItem>
                                     )}
                                 />
+
+                                <Separator />
+
+                                {/* Video Yükleme */}
+                                <FormField
+                                    control={form.control}
+                                    name="videos"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center gap-2">
+                                                <Film className="h-4 w-4" />
+                                                Videolar / GIF
+                                            </FormLabel>
+                                            <div className="space-y-3">
+                                                {(field.value as ProductVideoInput[] || []).map((vid, idx) => (
+                                                    <div key={`video-${idx}`} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30">
+                                                        <Film className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                        <span className="text-xs truncate flex-1 font-mono">{vid.url.split("/").pop()}</span>
+                                                        <Button
+                                                            type="button"
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-7 w-7"
+                                                            onClick={() =>
+                                                                field.onChange(
+                                                                    (field.value as ProductVideoInput[] || []).filter((_, i) => i !== idx)
+                                                                )
+                                                            }
+                                                        >
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                                <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed cursor-pointer hover:border-primary/50 transition-colors ${videoUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                                                    {videoUploading ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Upload className="h-4 w-4" />
+                                                    )}
+                                                    <span className="text-sm">{videoUploading ? "Yükleniyor..." : "Video / GIF Ekle"}</span>
+                                                    <input
+                                                        type="file"
+                                                        accept="video/mp4,video/webm,video/ogg,image/gif"
+                                                        className="hidden"
+                                                        disabled={videoUploading}
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            setVideoUploading(true);
+                                                            try {
+                                                                const fd = new FormData();
+                                                                fd.append("file", file);
+                                                                const res = await fetch("/api/upload/video", { method: "POST", body: fd });
+                                                                const json = await res.json();
+                                                                if (json.success) {
+                                                                    const cur = (field.value as ProductVideoInput[]) || [];
+                                                                    field.onChange([...cur, { url: json.url, order: cur.length }]);
+                                                                } else {
+                                                                    toast({ title: json.error || "Video yüklenemedi", variant: "destructive" });
+                                                                }
+                                                            } catch {
+                                                                toast({ title: "Video yüklenemedi", variant: "destructive" });
+                                                            } finally {
+                                                                setVideoUploading(false);
+                                                                e.target.value = "";
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                            </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <Separator />
+
+                                {/* 3D Model Yükleme */}
+                                <FormField
+                                    control={form.control}
+                                    name="model3dUrl"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center gap-2">
+                                                <Box className="h-4 w-4" />
+                                                3D Model (GLB / GLTF)
+                                            </FormLabel>
+                                            {field.value && typeof field.value === "string" && field.value.length > 0 ? (
+                                                <div className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30">
+                                                    <Box className="h-4 w-4 text-primary shrink-0" />
+                                                    <span className="text-xs truncate flex-1 font-mono">{field.value.split("/").pop()}</span>
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-7 w-7"
+                                                        onClick={() => field.onChange("")}
+                                                    >
+                                                        <X className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed cursor-pointer hover:border-primary/50 transition-colors ${model3dUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                                                    {model3dUploading ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Upload className="h-4 w-4" />
+                                                    )}
+                                                    <span className="text-sm">{model3dUploading ? "Yükleniyor..." : "GLB / GLTF Dosyası Seç"}</span>
+                                                    <input
+                                                        type="file"
+                                                        accept=".glb,.gltf"
+                                                        className="hidden"
+                                                        disabled={model3dUploading}
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            setModel3dUploading(true);
+                                                            try {
+                                                                const fd = new FormData();
+                                                                fd.append("file", file);
+                                                                const res = await fetch("/api/upload/model3d", { method: "POST", body: fd });
+                                                                const json = await res.json();
+                                                                if (json.success && json.url) {
+                                                                    field.onChange(json.url);
+                                                                } else {
+                                                                    toast({ title: json.error || "Model yüklenemedi", variant: "destructive" });
+                                                                }
+                                                            } catch {
+                                                                toast({ title: "Model yüklenemedi", variant: "destructive" });
+                                                            } finally {
+                                                                setModel3dUploading(false);
+                                                                e.target.value = "";
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                            )}
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </CardContent>
                         </Card>
 
@@ -304,7 +464,7 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
                                                                 <FormItem>
                                                                     <FormLabel>Stok</FormLabel>
                                                                     <FormControl>
-                                                                        <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                                                        <Input type="number" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} />
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
@@ -373,7 +533,7 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
                                                         render={({ field }) => (
                                                             <FormItem className="hidden">
                                                                 <FormControl>
-                                                                    <Input {...field} />
+                                                                    <Input {...field} value={field.value ?? ""} />
                                                                 </FormControl>
                                                             </FormItem>
                                                         )}
@@ -422,7 +582,7 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
                                                                 <FormItem>
                                                                     <FormLabel>Stok</FormLabel>
                                                                     <FormControl>
-                                                                        <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                                                        <Input type="number" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} />
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
@@ -448,7 +608,7 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
                                                         render={({ field }) => (
                                                             <FormItem className="hidden">
                                                                 <FormControl>
-                                                                    <Input {...field} />
+                                                                    <Input {...field} value={field.value ?? ""} />
                                                                 </FormControl>
                                                             </FormItem>
                                                         )}
@@ -502,7 +662,8 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
                                                                     <Input
                                                                         type="number"
                                                                         {...field}
-                                                                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                                                        value={field.value ?? ""}
+                                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage />

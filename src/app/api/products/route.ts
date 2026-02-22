@@ -17,14 +17,17 @@ export async function GET(request: NextRequest) {
 		const isFeatured = searchParams.get("isFeatured");
 		const isNew = searchParams.get("isNew");
 		const hasDiscount = searchParams.get("hasDiscount");
+		const inStock = searchParams.get("inStock");
 		const orderBy = searchParams.get("orderBy");
+		const minPrice = searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : null;
+		const maxPrice = searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : null;
 		const riderHeight = searchParams.get("riderHeight") ? Number(searchParams.get("riderHeight")) : null;
 		const riderInseam = searchParams.get("riderInseam") ? Number(searchParams.get("riderInseam")) : null;
 
 		const skip = (page - 1) * limit;
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const where: Record<string, any> = {};
+		const where: Record<string, any> = { isActive: true };
 
 		if (search) {
 			where.OR = [
@@ -35,12 +38,31 @@ export async function GET(request: NextRequest) {
 			];
 		}
 
-		if (categoryId) where.categoryId = Number(categoryId);
+		// Kategori filtresi: seçili kategori + alt kategorileri dahil et
+		if (categoryId) {
+			const catId = Number(categoryId);
+			const childCats = await prisma.category.findMany({
+				where: { parentId: catId },
+				select: { id: true },
+			});
+			const catIds = [catId, ...childCats.map((c) => c.id)];
+			where.categoryId = { in: catIds };
+		}
+
 		if (brandId) where.brandId = Number(brandId);
-		if (isActive !== null) where.isActive = isActive === "true";
+		if (isActive !== null && isActive !== undefined) where.isActive = isActive === "true";
 		if (isFeatured !== null) where.isFeatured = isFeatured === "true";
 		if (isNew !== null) where.isNew = isNew === "true";
 		if (hasDiscount === "true") where.comparePrice = { not: null };
+		if (inStock === "true") where.stock = { gt: 0 };
+
+		// Fiyat aralığı filtresi
+		if (minPrice !== null || maxPrice !== null) {
+			where.price = {
+				...(minPrice !== null ? { gte: minPrice } : {}),
+				...(maxPrice !== null ? { lte: maxPrice } : {}),
+			};
+		}
 
 		if (riderHeight || riderInseam) {
 			where.variants = {
@@ -51,7 +73,7 @@ export async function GET(request: NextRequest) {
 			};
 		}
 
-		// Determine ordering
+		// Sıralama
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		let orderByClause: Record<string, any> = { createdAt: "desc" };
 		if (orderBy === "price_asc") orderByClause = { price: "asc" };
@@ -101,13 +123,14 @@ export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
 		const validated = createProductSchema.parse(body);
-		const { images, variants, ...productData } = validated;
+		const { images, variants, videos, ...productData } = validated;
 
 		const slug = generateSlug(productData.name);
 
 		const product = await prisma.product.create({
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			data: {
-				...productData,
+				...(productData as any),
 				slug,
 				...(images?.length
 					? {
@@ -115,6 +138,18 @@ export async function POST(request: NextRequest) {
 							create: images.map((img, i) => ({
 								url: img.url,
 								alt: img.alt || "",
+								order: i,
+							})),
+						},
+					}
+					: {}),
+				...(videos?.length
+					? {
+						videos: {
+							create: videos.map((v, i) => ({
+								url: v.url,
+								thumbnail: v.thumbnail || null,
+								title: v.title || null,
 								order: i,
 							})),
 						},

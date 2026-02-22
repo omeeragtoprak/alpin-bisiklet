@@ -18,7 +18,15 @@ const ALLOWED_VIDEO_TYPES = [
   "video/webm",
   "video/ogg",
   "video/quicktime",
+  "image/gif", // GIF animasyon desteği
 ];
+
+const ALLOWED_MODEL_TYPES = [
+  "model/gltf-binary",
+  "model/gltf+json",
+  "application/octet-stream", // .glb çoğunlukla bu mime ile gelir
+];
+const MAX_MODEL_SIZE = 50 * 1024 * 1024; // 50MB
 
 export interface UploadResult {
   success: boolean;
@@ -134,6 +142,34 @@ export async function uploadVideo(file: File): Promise<UploadResult> {
       success: false,
       error: "Video yüklenirken bir hata oluştu",
     };
+  }
+}
+
+/**
+ * 3D model (GLB/GLTF) yükler
+ */
+export async function uploadModel3d(file: File): Promise<UploadResult> {
+  try {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (!ext || !["glb", "gltf"].includes(ext)) {
+      return { success: false, error: "Sadece .glb ve .gltf dosyaları desteklenir" };
+    }
+    if (file.size > MAX_MODEL_SIZE) {
+      return { success: false, error: `Dosya çok büyük. Maksimum: ${MAX_MODEL_SIZE / 1024 / 1024}MB` };
+    }
+
+    const filename = generateUniqueFilename(file.name);
+    const uploadDir = path.join(UPLOAD_DIR, "models");
+    const filepath = path.join(uploadDir, filename);
+
+    await mkdir(uploadDir, { recursive: true });
+    const bytes = await file.arrayBuffer();
+    await writeFile(filepath, Buffer.from(bytes));
+
+    return { success: true, url: `/uploads/models/${filename}`, filename };
+  } catch (error) {
+    console.error("3D model yükleme hatası:", error);
+    return { success: false, error: "3D model yüklenirken bir hata oluştu" };
   }
 }
 

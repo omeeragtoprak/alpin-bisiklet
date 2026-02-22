@@ -216,6 +216,9 @@ model Product {
   isFeatured    Boolean  @default(false)
   isNew         Boolean  @default(false)
 
+  // 3D Model (GLB/GLTF dosya yolu)
+  model3dUrl      String?
+
   // SEO
   metaTitle       String?
   metaDescription String?

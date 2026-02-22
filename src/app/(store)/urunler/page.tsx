@@ -313,9 +313,13 @@ export default function ProductsPage() {
 		staleTime: 60 * 1000,
 	});
 
+	// kategori slug varken categoryId henüz çözülmediyse ürün sorgusu beklesin
+	const pendingCategoryResolve = !!kategoriSlug && !filters.categoryId && !categoriesLoading;
+
 	// Fetch products
 	const { data, isLoading, isFetching } = useQuery({
 		queryKey: ["products", filters],
+		enabled: !pendingCategoryResolve,
 		queryFn: async () => {
 			const params = new URLSearchParams();
 			params.set("page", filters.page.toString());
@@ -324,7 +328,11 @@ export default function ProductsPage() {
 			if (filters.categoryId)
 				params.set("categoryId", filters.categoryId);
 			if (filters.brandId) params.set("brandId", filters.brandId);
-			if (filters.inStock) params.set("isActive", "true");
+			if (filters.inStock) params.set("inStock", "true");
+			if (filters.minPrice > 0) params.set("minPrice", filters.minPrice.toString());
+			if (filters.maxPrice < 50000) params.set("maxPrice", filters.maxPrice.toString());
+			// sort: "price-asc" → "price_asc" (API formatı)
+			if (filters.sort) params.set("orderBy", filters.sort.replace(/-/g, "_"));
 			if (filters.riderHeight > 0) params.set("riderHeight", filters.riderHeight.toString());
 			if (filters.riderInseam > 0) params.set("riderInseam", filters.riderInseam.toString());
 

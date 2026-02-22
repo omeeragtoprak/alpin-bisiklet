@@ -69,6 +69,7 @@ export default function CouponsPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
+            if (!res.ok) throw new Error((await res.json())?.error || "İşlem başarısız");
             return res.json();
         },
         onSuccess: () => {

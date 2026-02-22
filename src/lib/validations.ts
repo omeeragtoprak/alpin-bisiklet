@@ -29,8 +29,16 @@ export const sortSchema = z.object({
 /** Ürün oluşturma schema'sı */
 /** Ürün görseli schema'sı */
 export const productImageSchema = z.object({
-  url: z.string().url("Geçerli bir URL gerekli"),
-  alt: z.string().optional(),
+  url: z.string().min(1, "URL gerekli"), // Yerel upload path'leri için .url() yerine .min(1)
+  alt: z.string().nullish(),             // DB'den null gelebilir
+  order: z.number().int().default(0),
+});
+
+/** Ürün videosu schema'sı */
+export const productVideoSchema = z.object({
+  url: z.string().min(1, "URL gerekli"), // Yerel upload path'leri için .url() yerine .min(1)
+  thumbnail: z.string().nullish(),       // DB'den null gelebilir
+  title: z.string().nullish(),           // DB'den null gelebilir
   order: z.number().int().default(0),
 });
 
@@ -72,6 +80,8 @@ export const createProductSchema = z.object({
   isFeatured: z.boolean().default(false),
   isNew: z.boolean().default(false),
   images: z.array(productImageSchema).optional(),
+  videos: z.array(productVideoSchema).optional(),
+  model3dUrl: z.string().optional(),
   variants: z.array(productVariantSchema).optional(),
 });
 
@@ -179,7 +189,7 @@ export type UpdateBrandInput = z.infer<typeof updateBrandSchema>;
 export const createBannerSchema = z.object({
   title: z.string().min(2, "Başlık en az 2 karakter olmalı"),
   subtitle: z.string().optional(),
-  image: z.string().url("Geçerli bir resim URL'si gerekli"),
+  image: z.string().min(1, "Resim gerekli"), // Yerel upload path'leri için .url() yerine .min(1)
   mobileImage: z.string().optional(),
   link: z.string().optional(),
   buttonText: z.string().optional(),

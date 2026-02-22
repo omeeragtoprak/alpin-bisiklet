@@ -56,11 +56,16 @@ export async function PATCH(
 
 		const body = await request.json();
 		const validated = updateProductSchema.parse(body);
-		const { variants, images, ...productData } = validated as any;
+		const { variants, images, videos, ...productData } = validated as any;
 
 		// Variant upsert: sil ve yeniden oluştur
 		if (variants !== undefined) {
 			await prisma.productVariant.deleteMany({ where: { productId: numId } });
+		}
+
+		// Video upsert: sil ve yeniden oluştur
+		if (videos !== undefined) {
+			await prisma.productVideo.deleteMany({ where: { productId: numId } });
 		}
 
 		const product = await prisma.product.update({
@@ -81,6 +86,18 @@ export async function PATCH(
 								maxHeight: v.maxHeight || undefined,
 								minInseam: v.minInseam || undefined,
 								maxInseam: v.maxInseam || undefined,
+							})),
+						},
+					}
+					: {}),
+				...(videos !== undefined && videos.length > 0
+					? {
+						videos: {
+							create: videos.map((v: any, i: number) => ({
+								url: v.url,
+								thumbnail: v.thumbnail || null,
+								title: v.title || null,
+								order: i,
 							})),
 						},
 					}
