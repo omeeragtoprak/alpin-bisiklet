@@ -6,7 +6,15 @@ import { Suspense, useRef } from "react";
 import * as THREE from "three";
 
 function BicycleModel() {
-	const { scene } = useGLTF("/bycle.glb");
+	const { scene } = useGLTF("/bycle.glb", false, false, (loader) => {
+		// GLB içindeki gömülü texture'lar blob: URL olarak üretilir;
+		// dev ortamında bunlar zaman zaman yüklenemez — sessizce görmezden gel
+		loader.manager.onError = (url: string) => {
+			if (!url.startsWith("blob:")) {
+				console.warn("GLTF yükleme hatası:", url);
+			}
+		};
+	});
 	const groupRef = useRef<THREE.Group>(null);
 
 	useFrame((state) => {
@@ -50,4 +58,8 @@ export function BicycleShowcase({ className = "" }: { className?: string }) {
 	);
 }
 
-useGLTF.preload("/bycle.glb");
+useGLTF.preload("/bycle.glb", false, false, (loader) => {
+	loader.manager.onError = (url: string) => {
+		if (!url.startsWith("blob:")) console.warn("GLTF preload hatası:", url);
+	};
+});

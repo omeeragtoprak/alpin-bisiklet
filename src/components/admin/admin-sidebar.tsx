@@ -108,7 +108,7 @@ export function AdminSidebar() {
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = "/giris";
+    window.location.href = "/";
   };
 
   return (
