@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion } from "motion/react";
 import {
 	ShoppingCart,
@@ -10,6 +10,7 @@ import {
 	Minus,
 	Plus,
 	Check,
+	ChevronLeft,
 	ChevronRight,
 	Star,
 	Truck,
@@ -37,7 +38,20 @@ export default function ProductDetailPage() {
 	const params = useParams();
 	const [quantity, setQuantity] = useState(1);
 	const [selectedImage, setSelectedImage] = useState(0);
+	const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+	const [isZooming, setIsZooming] = useState(false);
 	const { addItem, openCart } = useCartStore();
+
+	const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+		const rect = e.currentTarget.getBoundingClientRect();
+		setZoomPos({
+			x: ((e.clientX - rect.left) / rect.width) * 100,
+			y: ((e.clientY - rect.top) / rect.height) * 100,
+		});
+	}, []);
+
+	const prevImage = () => setSelectedImage((i) => Math.max(0, i - 1));
+	const nextImage = (total: number) => setSelectedImage((i) => Math.min(total - 1, i + 1));
 	const { toast } = useToast();
 
 	const { data: product, isLoading } = useQuery({
@@ -143,55 +157,94 @@ export default function ProductDetailPage() {
 					<motion.div
 						initial={{ opacity: 0, scale: 0.95 }}
 						animate={{ opacity: 1, scale: 1 }}
-						className="aspect-square bg-white rounded-2xl overflow-hidden relative border"
+						className={`aspect-square bg-white rounded-2xl overflow-hidden relative border select-none ${isZooming ? "cursor-crosshair" : "cursor-zoom-in"}`}
+						onMouseMove={handleMouseMove}
+						onMouseEnter={() => setIsZooming(true)}
+						onMouseLeave={() => setIsZooming(false)}
 					>
-						{product.images?.[selectedImage]?.url ? (
-							<Image
-								src={product.images[selectedImage].url}
-								alt={
-									product.images[selectedImage].alt ||
-									product.name
-								}
-								fill
-								className="object-contain p-4"
-								sizes="(max-width: 768px) 100vw, 50vw"
-								priority
-							/>
-						) : (
-							<div className="w-full h-full flex items-center justify-center text-muted-foreground">
-								Görsel Yok
-							</div>
-						)}
+						{/* Zoom wrapper */}
+						<div
+							className="absolute inset-0"
+							style={isZooming ? {
+								transform: "scale(2.5)",
+								transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+							} : {
+								transform: "scale(1)",
+								transition: "transform 0.25s ease-out",
+							}}
+						>
+							{product.images?.[selectedImage]?.url ? (
+								<Image
+									src={product.images[selectedImage].url}
+									alt={product.images[selectedImage].alt || product.name}
+									fill
+									className="object-contain p-4"
+									sizes="(max-width: 768px) 100vw, 50vw"
+									priority
+								/>
+							) : (
+								<div className="w-full h-full flex items-center justify-center text-muted-foreground">
+									Görsel Yok
+								</div>
+							)}
+						</div>
+
+						{/* Discount badge */}
 						{discount > 0 && (
-							<div className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+							<div className="absolute top-4 left-4 z-10 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full pointer-events-none">
 								%{discount}
 							</div>
+						)}
+
+						{/* Prev / Next buttons */}
+						{product.images?.length > 1 && (
+							<>
+								<button
+									type="button"
+									onClick={(e) => { e.stopPropagation(); prevImage(); }}
+									disabled={selectedImage === 0}
+									className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 flex items-center justify-center rounded-full bg-background/80 shadow-md border hover:bg-background transition-opacity disabled:opacity-30"
+									aria-label="Önceki fotoğraf"
+								>
+									<ChevronLeft className="h-5 w-5" />
+								</button>
+								<button
+									type="button"
+									onClick={(e) => { e.stopPropagation(); nextImage(product.images.length); }}
+									disabled={selectedImage === product.images.length - 1}
+									className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 flex items-center justify-center rounded-full bg-background/80 shadow-md border hover:bg-background transition-opacity disabled:opacity-30"
+									aria-label="Sonraki fotoğraf"
+								>
+									<ChevronRight className="h-5 w-5" />
+								</button>
+								<div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 bg-background/70 text-xs font-medium px-2.5 py-1 rounded-full pointer-events-none">
+									{selectedImage + 1} / {product.images.length}
+								</div>
+							</>
 						)}
 					</motion.div>
 
 					{product.images?.length > 1 && (
 						<div className="grid grid-cols-5 gap-2">
-							{product.images.map(
-								(img: any, idx: number) => (
-									<button
-										key={img.id}
-										type="button"
-										onClick={() => setSelectedImage(idx)}
-										className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors relative ${selectedImage === idx
-												? "border-primary ring-2 ring-primary/20"
-												: "border-transparent hover:border-muted-foreground/30"
-											}`}
-									>
-										<Image
-											src={img.url}
-											alt={`${product.name} ${idx + 1}`}
-											fill
-											className="object-cover"
-											sizes="80px"
-										/>
-									</button>
-								),
-							)}
+							{product.images.map((img: any, idx: number) => (
+								<button
+									key={img.id}
+									type="button"
+									onClick={() => setSelectedImage(idx)}
+									className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors relative ${selectedImage === idx
+										? "border-primary ring-2 ring-primary/20"
+										: "border-transparent hover:border-muted-foreground/30"
+									}`}
+								>
+									<Image
+										src={img.url}
+										alt={`${product.name} ${idx + 1}`}
+										fill
+										className="object-cover"
+										sizes="80px"
+									/>
+								</button>
+							))}
 						</div>
 					)}
 				</div>

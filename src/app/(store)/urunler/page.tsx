@@ -7,6 +7,7 @@ import {
 	Filter,
 	Grid,
 	List,
+	LayoutGrid,
 	SlidersHorizontal,
 	X,
 	ChevronDown,
@@ -257,7 +258,7 @@ function FilterSidebar({
 export default function ProductsPage() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
-	const [view, setView] = useState<"grid" | "list">("grid");
+	const [view, setView] = useState<"grid" | "grid4" | "list">("grid");
 	const [bicycleFinderOpen, setBicycleFinderOpen] = useState(false);
 	const [filters, setFiltersState] = useState<FilterState>({
 		search: searchParams.get("search") || "",
@@ -505,22 +506,29 @@ export default function ProductsPage() {
 
 							<div className="hidden sm:flex gap-1">
 								<Button
-									variant={
-										view === "grid" ? "default" : "outline"
-									}
+									variant={view === "grid" ? "default" : "outline"}
 									size="icon"
 									onClick={() => setView("grid")}
-									aria-label="Grid görünümü"
+									aria-label="3'lü grid görünümü"
+									title="3'lü görünüm"
 								>
 									<Grid className="h-4 w-4" />
 								</Button>
 								<Button
-									variant={
-										view === "list" ? "default" : "outline"
-									}
+									variant={view === "grid4" ? "default" : "outline"}
+									size="icon"
+									onClick={() => setView("grid4")}
+									aria-label="4'lü grid görünümü"
+									title="4'lü görünüm"
+								>
+									<LayoutGrid className="h-4 w-4" />
+								</Button>
+								<Button
+									variant={view === "list" ? "default" : "outline"}
 									size="icon"
 									onClick={() => setView("list")}
 									aria-label="Listeleme görünümü"
+									title="Liste görünümü"
 								>
 									<List className="h-4 w-4" />
 								</Button>
@@ -591,6 +599,8 @@ export default function ProductsPage() {
 							className={
 								view === "grid"
 									? "grid grid-cols-2 md:grid-cols-3 gap-4"
+									: view === "grid4"
+									? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
 									: "space-y-4"
 							}
 						>
@@ -623,6 +633,8 @@ export default function ProductsPage() {
 								className={
 									view === "grid"
 										? "grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6"
+										: view === "grid4"
+										? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4"
 										: "space-y-4"
 								}
 							>
@@ -640,14 +652,14 @@ export default function ProductsPage() {
 											<Link
 												href={`/urunler/${product.slug}`}
 												className={
-													view === "grid"
+													view !== "list"
 														? "block group"
 														: "flex gap-4 p-4 bg-background border rounded-lg hover:shadow-md transition-shadow"
 												}
 											>
 												<div
 													className={
-														view === "grid"
+														view !== "list"
 															? "aspect-square bg-muted rounded-xl overflow-hidden mb-3 relative"
 															: "w-32 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0 relative"
 													}
