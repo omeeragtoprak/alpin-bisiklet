@@ -54,5 +54,53 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // DB bağlantısı yoksa devam et
     }
 
-    return [...staticPages, ...productPages, ...categoryPages];
+    // Blog yazıları
+    let blogPages: MetadataRoute.Sitemap = [];
+    try {
+        const blogs = await prisma.blog.findMany({
+            where: { isPublished: true },
+            select: { slug: true, updatedAt: true },
+        });
+
+        blogPages = blogs.map((blog) => ({
+            url: `${BASE_URL}/blog/${blog.slug}`,
+            lastModified: blog.updatedAt,
+            changeFrequency: "monthly" as const,
+            priority: 0.6,
+        }));
+    } catch {
+        // DB bağlantısı yoksa devam et
+    }
+
+    // CMS Sayfaları
+    let cmsPages: MetadataRoute.Sitemap = [];
+    try {
+        const pages = await prisma.page.findMany({
+            where: { isPublished: true },
+            select: { slug: true, updatedAt: true },
+        });
+
+        cmsPages = pages.map((page) => ({
+            url: `${BASE_URL}/sayfalar/${page.slug}`,
+            lastModified: page.updatedAt,
+            changeFrequency: "monthly" as const,
+            priority: 0.5,
+        }));
+    } catch {
+        // DB bağlantısı yoksa devam et
+    }
+
+    // Blog ana sayfası
+    const blogIndex: MetadataRoute.Sitemap = [
+        { url: `${BASE_URL}/blog`, changeFrequency: "daily", priority: 0.8 },
+    ];
+
+    return [
+        ...staticPages,
+        ...blogIndex,
+        ...productPages,
+        ...categoryPages,
+        ...blogPages,
+        ...cmsPages,
+    ];
 }

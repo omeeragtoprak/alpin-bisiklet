@@ -12,19 +12,15 @@ export const metadata: Metadata = {
   },
   description:
     "Dağ bisikleti, yol bisikleti, şehir bisikleti ve aksesuarlar. Kaliteli ürünler, uygun fiyatlar ve hızlı teslimat.",
-  keywords: [
-    "bisiklet",
-    "dağ bisikleti",
-    "yol bisikleti",
-    "bisiklet aksesuarları",
-    "bisiklet yedek parça",
-    "kask",
-    "bisiklet giysi",
-  ],
   openGraph: {
     type: "website",
     locale: "tr_TR",
     siteName: "Alpin Bisiklet",
+    images: [{ url: "/logo.png", width: 200, height: 200, alt: "Alpin Bisiklet" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@alpinbisiklet",
   },
 };
 

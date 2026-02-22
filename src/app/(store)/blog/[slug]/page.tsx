@@ -4,6 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import prisma from "@/lib/prisma";
 import { ChevronRight, Calendar } from "lucide-react";
+import { BlogPostingSchema, BreadcrumbSchema } from "@/components/seo/json-ld";
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://alpinbisiklet.com";
 
 interface Props {
     params: Promise<{ slug: string }>;
@@ -13,14 +16,37 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
     const blog = await prisma.blog.findFirst({
         where: { slug, isPublished: true },
-        select: { title: true, metaTitle: true, metaDescription: true, excerpt: true },
+        select: { title: true, metaTitle: true, metaDescription: true, excerpt: true, coverImage: true, publishedAt: true },
     });
 
     if (!blog) return {};
 
+    const title = blog.metaTitle || blog.title;
+    const description = blog.metaDescription || blog.excerpt || undefined;
+    const imageUrl = blog.coverImage?.startsWith("http")
+        ? blog.coverImage
+        : blog.coverImage
+          ? `${BASE_URL}${blog.coverImage}`
+          : undefined;
+
     return {
-        title: blog.metaTitle || blog.title,
-        description: blog.metaDescription || blog.excerpt || undefined,
+        title,
+        description,
+        alternates: { canonical: `${BASE_URL}/blog/${slug}` },
+        openGraph: {
+            title,
+            description,
+            type: "article",
+            url: `${BASE_URL}/blog/${slug}`,
+            images: imageUrl ? [{ url: imageUrl, alt: title }] : undefined,
+            publishedTime: blog.publishedAt?.toISOString(),
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: imageUrl ? [imageUrl] : undefined,
+        },
     };
 }
 
@@ -32,6 +58,7 @@ export default async function BlogDetailPage({ params }: Props) {
         select: {
             id: true,
             title: true,
+            excerpt: true,
             content: true,
             coverImage: true,
             publishedAt: true,
@@ -42,6 +69,15 @@ export default async function BlogDetailPage({ params }: Props) {
 
     return (
         <div className="container mx-auto px-4 py-12 max-w-4xl">
+            <BlogPostingSchema blog={blog} slug={slug} />
+            <BreadcrumbSchema
+                items={[
+                    { name: "Ana Sayfa", url: "/" },
+                    { name: "Blog", url: "/blog" },
+                    { name: blog.title, url: `/blog/${slug}` },
+                ]}
+            />
+
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1 text-sm text-muted-foreground mb-8" aria-label="Breadcrumb">
                 <Link href="/" className="hover:text-foreground transition-colors">Ana Sayfa</Link>
