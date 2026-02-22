@@ -3,7 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { admin, twoFactor } from "better-auth/plugins";
 import prisma from "./prisma";
-import { sendAdminOtpEmail } from "./mail";
+import { sendAdminOtpEmail, sendWelcomeEmail } from "./mail";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -37,6 +37,21 @@ export const auth = betterAuth({
         type: "string",
         defaultValue: "CUSTOMER",
         input: false,
+      },
+    },
+  },
+
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Sadece müşterilere hoş geldin maili gönder (admin hesapları hariç)
+          if (user.role !== "ADMIN") {
+            await sendWelcomeEmail(user.email, user.name ?? user.email).catch(
+              (err) => console.error("Welcome email gönderilemedi:", err),
+            );
+          }
+        },
       },
     },
   },

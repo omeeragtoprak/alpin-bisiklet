@@ -36,7 +36,9 @@ export default function LoginPage() {
 				throw new Error(data.error || "Giriş başarısız");
 			}
 
-			router.push("/hesabim");
+			const data = await res.json();
+			const role = data?.user?.role;
+			router.push(role === "ADMIN" ? "/admin" : "/hesabim");
 			router.refresh();
 		} catch (err: unknown) {
 			setError(err instanceof Error ? err.message : "Bir hata oluştu");

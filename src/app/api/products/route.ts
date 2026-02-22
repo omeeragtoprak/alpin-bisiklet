@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 import { createProductSchema } from "@/lib/validations";
+import { generateSlug } from "@/lib/generate-slug";
+import { requireAdmin } from "@/lib/auth-server";
 
 // GET /api/products - Ürün listesi
 export async function GET(request: NextRequest) {
@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
 
 		const skip = (page - 1) * limit;
 
-		const where: any = {};
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const where: Record<string, any> = {};
 
 		if (search) {
 			where.OR = [
@@ -51,7 +52,8 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Determine ordering
-		let orderByClause: any = { createdAt: "desc" };
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		let orderByClause: Record<string, any> = { createdAt: "desc" };
 		if (orderBy === "price_asc") orderByClause = { price: "asc" };
 		else if (orderBy === "price_desc") orderByClause = { price: "desc" };
 		else if (orderBy === "name_asc") orderByClause = { name: "asc" };
@@ -93,27 +95,15 @@ export async function GET(request: NextRequest) {
 
 // POST /api/products - Yeni ürün oluştur
 export async function POST(request: NextRequest) {
+	const session = await requireAdmin();
+	if (!session) return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
+
 	try {
-		const session = await auth.api.getSession({ headers: await headers() });
-
-		if (!session || session.user?.role !== "ADMIN") {
-			return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
-		}
-
 		const body = await request.json();
 		const validated = createProductSchema.parse(body);
 		const { images, variants, ...productData } = validated;
 
-		const slug = productData.name
-			.toLowerCase()
-			.replace(/ğ/g, "g")
-			.replace(/ü/g, "u")
-			.replace(/ş/g, "s")
-			.replace(/ı/g, "i")
-			.replace(/ö/g, "o")
-			.replace(/ç/g, "c")
-			.replace(/[^a-z0-9]+/g, "-")
-			.replace(/^-+|-+$/g, "");
+		const slug = generateSlug(productData.name);
 
 		const product = await prisma.product.create({
 			data: {

@@ -1,21 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 import { createBlogSchema } from "@/lib/validations";
-
-async function requireAdmin() {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session || session.user?.role !== "ADMIN") return null;
-    return session;
-}
-
-function generateSlug(title: string) {
-    return title.toLowerCase()
-        .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
-        .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
-        .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-}
+import { sanitizeContent } from "@/lib/sanitize-content";
+import { generateSlug } from "@/lib/generate-slug";
+import { requireAdmin } from "@/lib/auth-server";
 
 // GET /api/blog - Public, yayınlanmış yazıları listeler
 export async function GET(request: NextRequest) {
@@ -83,6 +71,7 @@ export async function POST(request: NextRequest) {
         const blog = await prisma.blog.create({
             data: {
                 ...validated,
+                content: sanitizeContent(validated.content),
                 slug,
                 publishedAt: validated.isPublished ? new Date() : null,
             },

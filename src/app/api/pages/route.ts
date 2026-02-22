@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 import { createPageSchema } from "@/lib/validations";
-
-async function requireAdmin() {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session || session.user?.role !== "ADMIN") return null;
-    return session;
-}
+import { sanitizeContent } from "@/lib/sanitize-content";
+import { generateSlug } from "@/lib/generate-slug";
+import { requireAdmin } from "@/lib/auth-server";
 
 // GET /api/pages
 export async function GET(request: NextRequest) {
@@ -22,7 +17,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ data: pages });
     } catch (error) {
         console.error("Pages GET error:", error);
-        return NextResponse.json({ message: "Sayfalar alınamadı" }, { status: 500 });
+        return NextResponse.json({ error: "Sayfalar alınamadı" }, { status: 500 });
     }
 }
 
@@ -34,15 +29,13 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const validated = createPageSchema.parse(body);
-        const slug = validated.slug || validated.title
-            .toLowerCase()
-            .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
-            .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
-            .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-        const page = await prisma.page.create({ data: { ...validated, slug } });
+        const slug = validated.slug || generateSlug(validated.title);
+        const page = await prisma.page.create({
+            data: { ...validated, content: sanitizeContent(validated.content), slug },
+        });
         return NextResponse.json({ data: page }, { status: 201 });
     } catch (error) {
         console.error("Page POST error:", error);
-        return NextResponse.json({ message: "Sayfa oluşturulamadı" }, { status: 500 });
+        return NextResponse.json({ error: "Sayfa oluşturulamadı" }, { status: 500 });
     }
 }

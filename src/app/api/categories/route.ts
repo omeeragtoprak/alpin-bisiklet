@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
 import { createCategorySchema } from "@/lib/validations";
+import { generateSlug } from "@/lib/generate-slug";
+import { requireAdmin } from "@/lib/auth-server";
 
 // GET /api/categories
 export async function GET() {
@@ -28,26 +28,14 @@ export async function GET() {
 
 // POST /api/categories
 export async function POST(request: NextRequest) {
+	const session = await requireAdmin();
+	if (!session) return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
+
 	try {
-		const session = await auth.api.getSession({ headers: await headers() });
-
-		if (!session || session.user?.role !== "ADMIN") {
-			return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
-		}
-
 		const body = await request.json();
 		const validated = createCategorySchema.parse(body);
 
-		const slug = validated.slug || validated.name
-			.toLowerCase()
-			.replace(/ğ/g, "g")
-			.replace(/ü/g, "u")
-			.replace(/ş/g, "s")
-			.replace(/ı/g, "i")
-			.replace(/ö/g, "o")
-			.replace(/ç/g, "c")
-			.replace(/[^a-z0-9]+/g, "-")
-			.replace(/^-+|-+$/g, "");
+		const slug = validated.slug || generateSlug(validated.name);
 
 		const category = await prisma.category.create({
 			data: {

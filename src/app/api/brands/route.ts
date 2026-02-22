@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 import { createBrandSchema } from "@/lib/validations";
+import { generateSlug } from "@/lib/generate-slug";
+import { requireAdmin } from "@/lib/auth-server";
 
 // GET /api/brands - Marka listesi
 export async function GET(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 		const { searchParams } = new URL(request.url);
 		const categoryId = searchParams.get("categoryId");
 
-		const where: any = { isActive: true };
+		const where: { isActive: boolean; products?: { some: { isActive: boolean; categoryId: number } } } = { isActive: true };
 
 		// Belirli bir kategoride ürünü olan markalar
 		if (categoryId) {
@@ -48,26 +48,14 @@ export async function GET(request: NextRequest) {
 
 // POST /api/brands - Yeni marka olustur
 export async function POST(request: NextRequest) {
+	const session = await requireAdmin();
+	if (!session) return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
+
 	try {
-		const session = await auth.api.getSession({ headers: await headers() });
-
-		if (!session || session.user?.role !== "ADMIN") {
-			return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
-		}
-
 		const body = await request.json();
 		const validated = createBrandSchema.parse(body);
 
-		const slug = validated.name
-			.toLowerCase()
-			.replace(/ğ/g, "g")
-			.replace(/ü/g, "u")
-			.replace(/ş/g, "s")
-			.replace(/ı/g, "i")
-			.replace(/ö/g, "o")
-			.replace(/ç/g, "c")
-			.replace(/[^a-z0-9]+/g, "-")
-			.replace(/^-+|-+$/g, "");
+		const slug = generateSlug(validated.name);
 
 		const brand = await prisma.brand.create({
 			data: {

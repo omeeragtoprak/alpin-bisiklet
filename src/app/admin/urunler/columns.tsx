@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
+import Image from "next/image";
 import { MoreHorizontal, ArrowUpDown, Pencil, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,9 +70,11 @@ export function createColumns(onDelete: (id: number, name: string) => void): Col
         return (
           <div className="flex items-center gap-3">
             {product.images?.[0]?.url ? (
-              <img
+              <Image
                 src={product.images[0].url}
                 alt={product.name}
+                width={40}
+                height={40}
                 className="h-10 w-10 rounded object-cover border"
               />
             ) : (

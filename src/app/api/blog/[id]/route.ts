@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 import { updateBlogSchema } from "@/lib/validations";
-
-async function requireAdmin() {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session || session.user?.role !== "ADMIN") return null;
-    return session;
-}
+import { sanitizeContent } from "@/lib/sanitize-content";
+import { requireAdmin } from "@/lib/auth-server";
 
 // GET /api/blog/[id] - Admin only
 export async function GET(
@@ -60,6 +54,7 @@ export async function PATCH(
             where: { id: numId },
             data: {
                 ...validated,
+                ...(validated.content !== undefined ? { content: sanitizeContent(validated.content) } : {}),
                 ...(publishedAt !== undefined ? { publishedAt } : {}),
             },
         });
