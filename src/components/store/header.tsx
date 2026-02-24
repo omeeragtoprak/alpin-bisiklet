@@ -35,7 +35,7 @@ const navigation = [
   { name: "Ana Sayfa", href: "/" },
   {
     name: "Bisikletler",
-    href: "/urunler?kategori=dag-bisikleti",
+    href: "/urunler?tip=BICYCLE",
     children: [
       { name: "Dağ Bisikleti", href: "/urunler?kategori=dag-bisikleti" },
       { name: "Yol Bisikleti", href: "/urunler?kategori=yol-bisikleti" },
@@ -46,7 +46,7 @@ const navigation = [
   },
   {
     name: "Aksesuarlar",
-    href: "/urunler?kategori=aksesuar",
+    href: "/urunler?tip=GENERAL",
     children: [
       { name: "Kask", href: "/urunler?kategori=kask" },
       { name: "Aydınlatma", href: "/urunler?kategori=aydinlatma" },

@@ -12,7 +12,11 @@ export async function GET(request: NextRequest) {
 		const limit = Number(searchParams.get("limit")) || 20;
 		const search = searchParams.get("search") || "";
 		const categoryId = searchParams.get("categoryId");
+		const kategoriSlug = searchParams.get("kategoriSlug");
+		const kategoriSlugs = searchParams.get("kategoriler"); // virgülle ayrılmış slug'lar
+		const categoryType = searchParams.get("categoryType");
 		const brandId = searchParams.get("brandId");
+		const brandIds = searchParams.get("markalar"); // virgülle ayrılmış ID'ler
 		const isActive = searchParams.get("isActive");
 		const isFeatured = searchParams.get("isFeatured");
 		const isNew = searchParams.get("isNew");
@@ -38,7 +42,7 @@ export async function GET(request: NextRequest) {
 			];
 		}
 
-		// Kategori filtresi: seçili kategori + alt kategorileri dahil et
+		// Kategori filtresi: ID, slug veya tip ile
 		if (categoryId) {
 			const catId = Number(categoryId);
 			const childCats = await prisma.category.findMany({
@@ -47,9 +51,52 @@ export async function GET(request: NextRequest) {
 			});
 			const catIds = [catId, ...childCats.map((c) => c.id)];
 			where.categoryId = { in: catIds };
+		} else if (kategoriSlug) {
+			const cat = await prisma.category.findFirst({
+				where: { slug: kategoriSlug, isActive: true },
+				select: { id: true },
+			});
+			if (cat) {
+				const childCats = await prisma.category.findMany({
+					where: { parentId: cat.id },
+					select: { id: true },
+				});
+				where.categoryId = { in: [cat.id, ...childCats.map((c) => c.id)] };
+			}
+		} else if (categoryType) {
+			const typeCats = await prisma.category.findMany({
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				where: { type: categoryType as any, isActive: true },
+				select: { id: true },
+			});
+			if (typeCats.length > 0) {
+				where.categoryId = { in: typeCats.map((c) => c.id) };
+			}
+		}
+
+		// Çoklu slug filtresi
+		if (kategoriSlugs && !categoryId && !kategoriSlug && !categoryType) {
+			const slugList = kategoriSlugs.split(",").filter(Boolean);
+			const cats = await prisma.category.findMany({
+				where: { slug: { in: slugList }, isActive: true },
+				select: { id: true },
+			});
+			const catIds = cats.map((c) => c.id);
+			// Her kategorinin alt kategorilerini de ekle
+			const childCats = await prisma.category.findMany({
+				where: { parentId: { in: catIds } },
+				select: { id: true },
+			});
+			where.categoryId = { in: [...catIds, ...childCats.map((c) => c.id)] };
 		}
 
 		if (brandId) where.brandId = Number(brandId);
+
+		// Çoklu marka filtresi
+		if (brandIds && !brandId) {
+			const ids = brandIds.split(",").filter(Boolean).map(Number);
+			if (ids.length > 0) where.brandId = { in: ids };
+		}
 		if (isActive !== null && isActive !== undefined) where.isActive = isActive === "true";
 		if (isFeatured !== null) where.isFeatured = isFeatured === "true";
 		if (isNew !== null) where.isNew = isNew === "true";
