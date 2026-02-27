@@ -73,7 +73,7 @@ export function ProductCard({ product }: ProductCardProps) {
 						src={product.images[0].url}
 						alt={product.images[0].alt || product.name}
 						fill
-						className="object-contain p-4 group-hover:scale-110 transition-transform duration-700"
+						className="object-contain p-4"
 						sizes="(max-width: 768px) 50vw, 300px"
 					/>
 				) : (

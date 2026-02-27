@@ -52,8 +52,8 @@ export function DiscountedProductsSection() {
 							Fırsatlar
 						</motion.span>
 						<motion.h2
-							initial={{ opacity: 0, y: 20 }}
-							whileInView={{ opacity: 1, y: 0 }}
+							initial={{ opacity: 0 }}
+							whileInView={{ opacity: 1 }}
 							viewport={{ once: true }}
 							className="text-3xl md:text-4xl font-black tracking-tight"
 						>
@@ -84,8 +84,8 @@ export function DiscountedProductsSection() {
 					{products.map((product, index) => (
 						<motion.div
 							key={product.id}
-							initial={{ opacity: 0, y: 30 }}
-							whileInView={{ opacity: 1, y: 0 }}
+							initial={{ opacity: 0 }}
+							whileInView={{ opacity: 1 }}
 							viewport={{ once: true }}
 							transition={{ duration: 0.4, delay: index * 0.05 }}
 							className="w-[280px] md:w-[300px] flex-shrink-0 snap-start"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion } from "motion/react";
 import {
 	Filter,
@@ -10,10 +10,11 @@ import {
 	LayoutGrid,
 	SlidersHorizontal,
 	X,
-	Search,
 	Bike,
 	ChevronDown,
 	ChevronUp,
+	ShoppingCart,
+	Heart,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -38,6 +39,10 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { BicycleFinder } from "@/components/store/bicycle-finder/bicycle-finder";
+import { useCartStore } from "@/store/use-cart-store";
+import { authClient } from "@/lib/auth-client";
+import { useFavoriteIds, useToggleFavorite } from "@/hooks";
+import { useToast } from "@/hooks/use-toast";
 
 // ─── Filtre Sidebar ────────────────────────────────────────────────────────────
 // Checkbox ile çoklu seçim. "Filtre Uygula"ya basılana kadar hiç API isteği gitmez.
@@ -60,6 +65,9 @@ interface FilterSidebarProps {
 	onPendingStok: (v: boolean) => void;
 	onApply: () => void;
 	onReset: () => void;
+	hasChanges: boolean;
+	/** true = Sheet içinde, butonlar sticky bottom-0 ile gösterilir */
+	inSheet?: boolean;
 	categories: any[];
 	brands: any[];
 	categoriesLoading?: boolean;
@@ -96,11 +104,6 @@ function AccordionSection({
 }
 
 function FilterSidebar({
-	urlKategoriler,
-	urlMarkalar,
-	urlMinFiyat,
-	urlMaxFiyat,
-	urlStok,
 	pendingKategoriler,
 	pendingMarkalar,
 	pendingMinFiyat,
@@ -113,24 +116,18 @@ function FilterSidebar({
 	onPendingStok,
 	onApply,
 	onReset,
+	hasChanges,
+	inSheet,
 	categories,
 	brands,
 	categoriesLoading,
 	brandsLoading,
 }: FilterSidebarProps) {
-	const hasChanges =
-		JSON.stringify([...pendingKategoriler].sort()) !==
-			JSON.stringify([...urlKategoriler].sort()) ||
-		JSON.stringify([...pendingMarkalar].sort()) !==
-			JSON.stringify([...urlMarkalar].sort()) ||
-		pendingMinFiyat !== urlMinFiyat ||
-		pendingMaxFiyat !== urlMaxFiyat ||
-		pendingStok !== urlStok;
 
 	return (
-		<div className="flex flex-col h-full">
-			{/* Kaydırılabilir filtre alanı */}
-			<div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-2">
+		<div className="relative">
+			{/* İçerik */}
+			<div className={`space-y-4 pr-1 ${inSheet ? "pb-28" : "pb-4"}`}>
 				{/* Kategoriler */}
 				<AccordionSection title="Kategoriler">
 					{categoriesLoading ? (
@@ -202,8 +199,9 @@ function FilterSidebar({
 				<Separator />
 
 				{/* Fiyat Aralığı */}
-				<AccordionSection title="Fiyat Aralığı">
-					<div className="space-y-3 pt-1">
+				<div>
+					<p className="py-1 text-sm font-semibold">Fiyat Aralığı</p>
+					<div className="space-y-3 mt-2">
 						<Slider
 							min={0}
 							max={50000}
@@ -232,7 +230,7 @@ function FilterSidebar({
 							/>
 						</div>
 					</div>
-				</AccordionSection>
+				</div>
 
 				<Separator />
 
@@ -246,20 +244,267 @@ function FilterSidebar({
 				</label>
 			</div>
 
-			{/* Sabit butonlar — her zaman altta görünür */}
-			<div className="pt-3 border-t mt-2 space-y-2 shrink-0">
-				<Button className="w-full" onClick={onApply} disabled={!hasChanges}>
-					Filtre Uygula
-				</Button>
-				<Button
-					variant="ghost"
-					size="sm"
-					className="w-full text-muted-foreground"
-					onClick={onReset}
+			{/* Butonlar — sadece Sheet içinde sticky gösterilir, desktop'ta ayrı fixed panel var */}
+			{inSheet && (
+				<div className="sticky bottom-0 pt-3 pb-3 space-y-2 border-t border-border/40 bg-background/80 backdrop-blur-md">
+					<Button className="w-full" onClick={onApply} disabled={!hasChanges}>
+						Filtre Uygula
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="w-full text-muted-foreground"
+						onClick={onReset}
+					>
+						Filtreleri Sıfırla
+					</Button>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ─── Ürün Kartı ────────────────────────────────────────────────────────────────
+
+function ProductCard({
+	product,
+	view,
+	onAddToCart,
+}: {
+	product: any;
+	view: "grid" | "grid4" | "list";
+	onAddToCart: (item: any) => void;
+}) {
+	const router = useRouter();
+	const { toast } = useToast();
+	const { data: session } = authClient.useSession();
+	const favoriteIds = useFavoriteIds();
+	const toggleFavorite = useToggleFavorite();
+	const isFavorited = favoriteIds.has(product.id);
+
+	const handleAddToCart = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onAddToCart({
+			id: product.id.toString(),
+			name: product.name,
+			price: product.price,
+			image: product.images?.[0]?.url || "",
+			slug: product.slug,
+			category: product.category?.name || "",
+		});
+		toast({ title: "Sepete Eklendi", description: product.name });
+	};
+
+	const handleFavorite = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!session?.user) { router.push("/giris"); return; }
+		toggleFavorite.mutate(product.id, {
+			onSuccess: (res: { removed: boolean }) => {
+				toast({ title: res.removed ? "Favorilerden çıkarıldı" : "Favorilere eklendi", description: product.name });
+			},
+			onError: () => { toast({ title: "Bir hata oluştu", variant: "destructive" }); },
+		});
+	};
+	if (view === "list") {
+		return (
+			<div className="group flex bg-background border border-border/60 rounded-xl hover:shadow-md hover:border-border transition-all overflow-hidden">
+				{/* Görsel */}
+				<Link
+					href={`/urunler/${product.slug}`}
+					className="relative w-36 sm:w-44 shrink-0 bg-muted overflow-hidden"
 				>
-					Filtreleri Sıfırla
-				</Button>
+					{product.images?.[0]?.url ? (
+						<Image
+							src={product.images[0].url}
+							alt={product.name}
+							fill
+							className="object-cover"
+							sizes="176px"
+						/>
+					) : (
+						<div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+							Görsel Yok
+						</div>
+					)}
+					{product.comparePrice > product.price && (
+						<div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
+							%{Math.round((1 - product.price / product.comparePrice) * 100)} İNDİRİM
+						</div>
+					)}
+					{product.isFeatured && (
+						<div className="absolute top-2 right-2 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
+							ÖNE ÇIKAN
+						</div>
+					)}
+				</Link>
+
+				{/* İçerik */}
+				<div className="flex flex-1 min-w-0 p-4 gap-4 items-center">
+					{/* Bilgi */}
+					<div className="flex-1 min-w-0">
+						{product.brand?.name && (
+							<p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">
+								{product.brand.name}
+							</p>
+						)}
+						<Link href={`/urunler/${product.slug}`}>
+							<h3 className="font-semibold text-sm sm:text-base leading-snug line-clamp-2 mb-1.5 hover:text-primary transition-colors">
+								{product.name}
+							</h3>
+						</Link>
+						{product.category?.name && (
+							<p className="text-xs text-muted-foreground mb-2">
+								{product.category.name}
+							</p>
+						)}
+						<div className="flex items-center gap-1.5">
+							{product.stock > 0 ? (
+								<>
+									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+									<span className="text-xs text-emerald-600 dark:text-emerald-400">
+										Stokta var
+									</span>
+								</>
+							) : (
+								<>
+									<span className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
+									<span className="text-xs text-destructive">Tükendi</span>
+								</>
+							)}
+						</div>
+					</div>
+
+					{/* Fiyat + Sepet */}
+					<div className="shrink-0 flex flex-col items-end gap-3">
+						<div className="text-right">
+							<div className="text-lg sm:text-xl font-bold text-primary">
+								{Number(product.price).toLocaleString("tr-TR")} TL
+							</div>
+							{product.comparePrice > product.price && (
+								<div className="text-xs text-muted-foreground line-through">
+									{Number(product.comparePrice).toLocaleString("tr-TR")} TL
+								</div>
+							)}
+						</div>
+						<Button
+							size="sm"
+							className="gap-1.5 text-xs"
+							disabled={product.stock <= 0}
+							onClick={() =>
+								onAddToCart({
+									id: product.id.toString(),
+									name: product.name,
+									price: product.price,
+									image: product.images?.[0]?.url || "",
+									slug: product.slug,
+									category: product.category?.name || "",
+								})
+							}
+						>
+							<ShoppingCart className="h-3.5 w-3.5" />
+							{product.stock <= 0 ? "Tükendi" : "Sepete Ekle"}
+						</Button>
+					</div>
+				</div>
 			</div>
+		);
+	}
+
+	return (
+		<div className="group relative">
+			{/* Görsel + hover aksiyonları */}
+			<div className="relative aspect-square bg-muted rounded-xl overflow-hidden mb-3">
+				<Link href={`/urunler/${product.slug}`} className="absolute inset-0">
+					{product.images?.[0]?.url ? (
+						<Image
+							src={product.images[0].url}
+							alt={product.name}
+							fill
+							className="object-cover"
+							sizes="(max-width: 768px) 50vw, 33vw"
+						/>
+					) : (
+						<div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+							Görsel Yok
+						</div>
+					)}
+				</Link>
+
+				{/* Badge'ler */}
+				<div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+					{product.comparePrice > product.price && (
+						<span className="bg-destructive text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+							%{Math.round((1 - product.price / product.comparePrice) * 100)} İndirim
+						</span>
+					)}
+					{product.isFeatured && (
+						<span className="bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-md">
+							Öne Çıkan
+						</span>
+					)}
+					{product.stock <= 0 && (
+						<span className="bg-foreground/80 text-background text-[10px] font-bold px-2 py-0.5 rounded-md">
+							Tükendi
+						</span>
+					)}
+				</div>
+
+				{/* Kalp butonu — hover'da sağdan gelir */}
+				<div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 translate-x-3 group-hover:translate-x-0 transition-all duration-300">
+					<button
+						type="button"
+						onClick={handleFavorite}
+						disabled={toggleFavorite.isPending}
+						className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 flex items-center justify-center shadow-md hover:text-destructive transition-colors cursor-pointer"
+						aria-label={isFavorited ? "Favorilerden çıkar" : "Favorilere ekle"}
+					>
+						<Heart
+							className={`h-3.5 w-3.5 transition-colors ${isFavorited ? "fill-destructive text-destructive" : ""}`}
+						/>
+					</button>
+				</div>
+
+				{/* Sepete Ekle overlay — hover'da aşağıdan çıkar */}
+				{product.stock > 0 && (
+					<div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
+						<div className="bg-gradient-to-t from-black/65 via-black/30 to-transparent pt-10 pb-2.5 px-2.5">
+							<button
+								type="button"
+								onClick={handleAddToCart}
+								className="w-full bg-white text-black rounded-lg py-2 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+							>
+								<ShoppingCart className="h-3.5 w-3.5" />
+								Sepete Ekle
+							</button>
+						</div>
+					</div>
+				)}
+			</div>
+
+			{/* Ürün bilgisi */}
+			<Link href={`/urunler/${product.slug}`}>
+				{product.brand?.name && (
+					<p className="text-xs text-muted-foreground mb-0.5">{product.brand.name}</p>
+				)}
+				<h3 className="font-medium text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+					{product.name}
+				</h3>
+				{product.category?.name && (
+					<p className="text-xs text-muted-foreground mb-1.5">{product.category.name}</p>
+				)}
+				<div className="flex items-baseline gap-2 flex-wrap">
+					<span className="font-bold text-primary">
+						{Number(product.price).toLocaleString("tr-TR")} TL
+					</span>
+					{product.comparePrice > product.price && (
+						<span className="text-xs text-muted-foreground line-through">
+							{Number(product.comparePrice).toLocaleString("tr-TR")} TL
+						</span>
+					)}
+				</div>
+			</Link>
 		</div>
 	);
 }
@@ -271,6 +516,7 @@ export default function ProductsPage() {
 	const router = useRouter();
 	const [view, setView] = useState<"grid" | "grid4" | "list">("grid");
 	const [bicycleFinderOpen, setBicycleFinderOpen] = useState(false);
+	const { addItem } = useCartStore();
 
 	// URL → filtre değerleri (tek doğruluk kaynağı)
 	const currentTip = searchParams.get("tip") || "";
@@ -306,21 +552,6 @@ export default function ProductsPage() {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [searchParams.toString()]);
 
-	// Arama input'u — 400ms debounce (anlık arama, Filtre Uygula gerektirmez)
-	const [searchInput, setSearchInput] = useState(currentAra);
-	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-	useEffect(() => {
-		setSearchInput(currentAra);
-	}, [currentAra]);
-
-	const handleSearchChange = (value: string) => {
-		setSearchInput(value);
-		clearTimeout(searchTimerRef.current);
-		searchTimerRef.current = setTimeout(() => {
-			applyToUrl({ ara: value || null, sayfa: null });
-		}, 400);
-	};
 
 	// URL'e toplu yazma — sadece "Filtre Uygula" ve arama tarafından çağrılır
 	function applyToUrl(updates: Record<string, string | null>) {
@@ -368,7 +599,6 @@ export default function ProductsPage() {
 		setPendingMinFiyat(0);
 		setPendingMaxFiyat(50000);
 		setPendingStok(false);
-		setSearchInput("");
 	}
 
 	// ── Veriler ────────────────────────────────────────────────────────────────
@@ -435,9 +665,25 @@ export default function ProductsPage() {
 
 	// ── Türev değerler ─────────────────────────────────────────────────────────
 
-	const selectedCategoryType =
-		categoriesData?.find((c: any) => urlKategoriler.includes(c.slug))?.type ??
-		(currentTip === "BICYCLE" ? "BICYCLE" : "GENERAL");
+	// Aktif bağlam tipi: tip param varsa oradan, yoksa seçili kategorinin tipinden
+	const activeContextType: string | null = useMemo(() => {
+		if (currentTip) return currentTip;
+		if (urlKategoriler.length > 0 && categoriesData) {
+			const firstCat = categoriesData.find((c: any) => urlKategoriler.includes(c.slug));
+			return firstCat?.type ?? null;
+		}
+		return null;
+	}, [currentTip, urlKategoriler, categoriesData]);
+
+	// Bağlama göre filtreli kategoriler — sidebar'da sadece ilgili kategoriler görünür
+	const contextCategories: any[] = useMemo(() => {
+		if (!categoriesData) return [];
+		if (!activeContextType) return categoriesData;
+		return categoriesData.filter((c: any) => c.type === activeContextType);
+	}, [categoriesData, activeContextType]);
+
+	// Eski değişken adı → geriye dönük uyumluluk
+	const selectedCategoryType = activeContextType ?? "GENERAL";
 
 	const activeFilterCount = [
 		urlKategoriler.length > 0 || currentTip,
@@ -448,14 +694,40 @@ export default function ProductsPage() {
 		currentBoy > 0,
 	].filter(Boolean).length;
 
-	const pageTitle =
-		urlKategoriler.length === 1
-			? (categoriesData?.find((c: any) => c.slug === urlKategoriler[0])?.name ?? "Ürünler")
-			: urlKategoriler.length > 1
-				? "Seçili Kategoriler"
-				: currentTip === "BICYCLE"
-					? "Bisikletler"
-					: "Tüm Ürünler";
+	const pageTitle = useMemo(() => {
+		if (urlKategoriler.length === 1) {
+			return categoriesData?.find((c: any) => c.slug === urlKategoriler[0])?.name ?? "Ürünler";
+		}
+		if (urlKategoriler.length > 1) return "Seçili Kategoriler";
+		if (currentTip === "BICYCLE") return "Bisikletler";
+		if (currentTip === "CLOTHING") return "Giyim";
+		if (currentTip === "GENERAL") return "Aksesuarlar & Yedek Parça";
+		return "Tüm Ürünler";
+	}, [urlKategoriler, categoriesData, currentTip]);
+
+	// Bağlam tipi değişince uyumsuz kategori seçimlerini URL'den temizle
+	const prevContextRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (
+			prevContextRef.current !== null &&
+			activeContextType !== null &&
+			prevContextRef.current !== activeContextType &&
+			categoriesData
+		) {
+			const compatible = urlKategoriler.filter((slug) => {
+				const cat = categoriesData.find((c: any) => c.slug === slug);
+				return cat?.type === activeContextType;
+			});
+			if (compatible.length !== urlKategoriler.length) {
+				applyToUrl({
+					kategoriler: compatible.length > 0 ? compatible.join(",") : null,
+					sayfa: null,
+				});
+			}
+		}
+		prevContextRef.current = activeContextType;
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeContextType]);
 
 	// Bisiklet bulucu — ilk kez bisiklet kategorisine girildiğinde aç
 	const prevTypeRef = useRef("GENERAL");
@@ -481,6 +753,16 @@ export default function ProductsPage() {
 
 	// ── Render ─────────────────────────────────────────────────────────────────
 
+	// hasChanges — desktop fixed buton panelinde de kullanılır
+	const hasChanges =
+		JSON.stringify([...pendingKategoriler].sort()) !==
+			JSON.stringify([...urlKategoriler].sort()) ||
+		JSON.stringify([...pendingMarkalar].sort()) !==
+			JSON.stringify([...urlMarkalar].sort()) ||
+		pendingMinFiyat !== urlMinFiyat ||
+		pendingMaxFiyat !== urlMaxFiyat ||
+		pendingStok !== currentStok;
+
 	const sharedSidebarProps = {
 		urlKategoriler,
 		urlMarkalar,
@@ -499,7 +781,8 @@ export default function ProductsPage() {
 		onPendingStok: setPendingStok,
 		onApply: applyFilters,
 		onReset: clearFilters,
-		categories: categoriesData || [],
+		hasChanges,
+		categories: contextCategories,
 		brands: brandsData || [],
 		categoriesLoading,
 		brandsLoading,
@@ -507,29 +790,47 @@ export default function ProductsPage() {
 
 	return (
 		<>
-			<div className="container mx-auto px-4 py-8">
+			<div className="container mx-auto px-4 pb-8 pt-6">
 				{/* Başlık */}
-				<div className="mb-6">
-					<h1 className="text-3xl font-bold mb-1">{pageTitle}</h1>
-					<p className="text-muted-foreground text-sm">
-						{data?.meta?.total ?? 0} ürün bulundu
-					</p>
-				</div>
-
 				<div className="flex gap-8">
 					{/* Desktop Sidebar */}
 					<aside className="hidden lg:block w-60 shrink-0">
 						<div
-							className="sticky top-20 flex flex-col"
-							style={{ height: "calc(100vh - 6rem)" }}
+							className="sticky top-28 flex flex-col"
+							style={{ height: "calc(100vh - 9rem)" }}
 						>
+							<div className="mb-3 shrink-0">
+								<h1 className="text-2xl font-bold mb-0.5">{pageTitle}</h1>
+								<p className="text-muted-foreground text-xs">
+									{data?.meta?.total ?? 0} ürün bulundu
+								</p>
+							</div>
 							<div className="flex items-center gap-2 mb-3 shrink-0">
 								<SlidersHorizontal className="h-4 w-4" />
 								<h2 className="font-semibold text-sm">Filtreler</h2>
 							</div>
 							<Separator className="mb-3 shrink-0" />
-							<div className="flex-1 min-h-0">
+							{/* Filtre içeriği scroll eder */}
+							<div className="flex-1 overflow-y-auto min-h-0 pr-1">
 								<FilterSidebar {...sharedSidebarProps} />
+							</div>
+							{/* Butonlar her zaman görünür — sidebar products alanının dışına çıkınca sayfa scroll'u ile kaybolur */}
+							<div className="shrink-0 pt-3 pb-3 space-y-2 border-t border-border/40 bg-background">
+								<Button
+									className="w-full"
+									onClick={applyFilters}
+									disabled={!hasChanges}
+								>
+									Filtre Uygula
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									className="w-full text-muted-foreground"
+									onClick={clearFilters}
+								>
+									Filtreleri Sıfırla
+								</Button>
 							</div>
 						</div>
 					</aside>
@@ -537,19 +838,8 @@ export default function ProductsPage() {
 					{/* Ana İçerik */}
 					<div className="flex-1 min-w-0">
 						{/* Araç Çubuğu */}
-						<div className="flex flex-col sm:flex-row gap-3 mb-5">
-							{/* Arama */}
-							<div className="relative flex-1">
-								<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-								<Input
-									placeholder="Ürün ara..."
-									value={searchInput}
-									onChange={(e) => handleSearchChange(e.target.value)}
-									className="pl-9"
-									aria-label="Ürün arama"
-								/>
-							</div>
-							<div className="flex gap-2 flex-wrap">
+						<div className="flex items-center gap-2 mb-5">
+							<div className="flex gap-2 flex-wrap flex-1">
 								{/* Bisiklet Bulucu */}
 								{selectedCategoryType === "BICYCLE" && (
 									<Button
@@ -577,68 +867,71 @@ export default function ProductsPage() {
 									</SheetTrigger>
 									<SheetContent
 										side="left"
-										className="w-80 overflow-y-auto"
+										className="w-80 overflow-y-auto p-0"
 									>
-										<SheetHeader>
-											<SheetTitle>Filtreler</SheetTitle>
-										</SheetHeader>
-										<div className="mt-4 pb-8">
-											<FilterSidebar {...sharedSidebarProps} />
+										<div className="px-6 pt-6 pb-2">
+											<SheetHeader>
+												<SheetTitle>Filtreler</SheetTitle>
+											</SheetHeader>
+										</div>
+										<div className="px-6">
+											<FilterSidebar {...sharedSidebarProps} inSheet />
 										</div>
 									</SheetContent>
 								</Sheet>
+							</div>
+							<div className="flex items-center gap-2 ml-auto shrink-0">
+							{/* Sıralama */}
+							<Select
+								value={currentSirala}
+								onValueChange={(v) =>
+									applyToUrl({ sirala: v, sayfa: null })
+								}
+							>
+								<SelectTrigger className="w-full sm:w-52">
+									<SelectValue placeholder="Sırala" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="newest">En Yeni</SelectItem>
+									<SelectItem value="price-asc">
+										Fiyat: Düşük → Yüksek
+									</SelectItem>
+									<SelectItem value="price-desc">
+										Fiyat: Yüksek → Düşük
+									</SelectItem>
+									<SelectItem value="name-asc">
+										İsim: A → Z
+									</SelectItem>
+								</SelectContent>
+							</Select>
 
-								{/* Sıralama */}
-								<Select
-									value={currentSirala}
-									onValueChange={(v) =>
-										applyToUrl({ sirala: v, sayfa: null })
-									}
+							{/* Görünüm */}
+							<div className="hidden sm:flex gap-1">
+								<Button
+									variant={view === "grid" ? "default" : "outline"}
+									size="icon"
+									onClick={() => setView("grid")}
+									title="3'lü görünüm"
 								>
-									<SelectTrigger className="w-full sm:w-52">
-										<SelectValue placeholder="Sırala" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="newest">En Yeni</SelectItem>
-										<SelectItem value="price-asc">
-											Fiyat: Düşük → Yüksek
-										</SelectItem>
-										<SelectItem value="price-desc">
-											Fiyat: Yüksek → Düşük
-										</SelectItem>
-										<SelectItem value="name-asc">
-											İsim: A → Z
-										</SelectItem>
-									</SelectContent>
-								</Select>
-
-								{/* Görünüm */}
-								<div className="hidden sm:flex gap-1">
-									<Button
-										variant={view === "grid" ? "default" : "outline"}
-										size="icon"
-										onClick={() => setView("grid")}
-										title="3'lü görünüm"
-									>
-										<Grid className="h-4 w-4" />
-									</Button>
-									<Button
-										variant={view === "grid4" ? "default" : "outline"}
-										size="icon"
-										onClick={() => setView("grid4")}
-										title="4'lü görünüm"
-									>
-										<LayoutGrid className="h-4 w-4" />
-									</Button>
-									<Button
-										variant={view === "list" ? "default" : "outline"}
-										size="icon"
-										onClick={() => setView("list")}
-										title="Liste görünümü"
-									>
-										<List className="h-4 w-4" />
-									</Button>
-								</div>
+									<Grid className="h-4 w-4" />
+								</Button>
+								<Button
+									variant={view === "grid4" ? "default" : "outline"}
+									size="icon"
+									onClick={() => setView("grid4")}
+									title="4'lü görünüm"
+								>
+									<LayoutGrid className="h-4 w-4" />
+								</Button>
+								<Button
+									variant={view === "list" ? "default" : "outline"}
+									size="icon"
+									onClick={() => setView("list")}
+									title="Liste görünümü"
+								>
+									<List className="h-4 w-4" />
+								</Button>
+							</div>
 							</div>
 						</div>
 
@@ -808,77 +1101,7 @@ export default function ProductsPage() {
 												delay: index * 0.03,
 											}}
 										>
-											<Link
-												href={`/urunler/${product.slug}`}
-												className={
-													view !== "list"
-														? "block group"
-														: "flex gap-4 p-4 bg-background border rounded-lg hover:shadow-md transition-shadow"
-												}
-											>
-												<div
-													className={
-														view !== "list"
-															? "aspect-square bg-muted rounded-xl overflow-hidden mb-3 relative"
-															: "w-32 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0 relative"
-													}
-												>
-													{product.images?.[0]?.url ? (
-														<Image
-															src={product.images[0].url}
-															alt={product.name}
-															fill
-															className="object-cover group-hover:scale-105 transition-transform duration-300"
-															sizes="(max-width: 768px) 50vw, 33vw"
-														/>
-													) : (
-														<div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-															Görsel Yok
-														</div>
-													)}
-													{product.isFeatured && (
-														<div className="absolute top-2 right-2 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-1 rounded">
-															ÖNE ÇIKAN
-														</div>
-													)}
-													{product.stock <= 0 && (
-														<div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded">
-															TÜKENDİ
-														</div>
-													)}
-												</div>
-												<div className="flex-1">
-													{product.brand?.name && (
-														<p className="text-xs text-muted-foreground mb-1">
-															{product.brand.name}
-														</p>
-													)}
-													<h3 className="font-medium line-clamp-2 mb-1 group-hover:text-primary transition-colors">
-														{product.name}
-													</h3>
-													{product.category?.name && (
-														<p className="text-sm text-muted-foreground mb-2">
-															{product.category.name}
-														</p>
-													)}
-													<div className="flex items-center gap-2 flex-wrap">
-														<span className="font-bold text-primary">
-															{Number(
-																product.price,
-															).toLocaleString("tr-TR")}{" "}
-															TL
-														</span>
-														{product.comparePrice && (
-															<span className="text-sm text-muted-foreground line-through">
-																{Number(
-																	product.comparePrice,
-																).toLocaleString("tr-TR")}{" "}
-																TL
-															</span>
-														)}
-													</div>
-												</div>
-											</Link>
+											<ProductCard product={product} view={view} onAddToCart={addItem} />
 										</motion.div>
 									))}
 								</div>
@@ -930,6 +1153,7 @@ export default function ProductsPage() {
 					})
 				}
 			/>
-		</>
+
+			</>
 	);
 }

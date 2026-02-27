@@ -74,8 +74,8 @@ export function FeaturedProducts() {
                     {products.map((product, index) => (
                         <motion.div
                             key={product.id}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0 }}
+                            whileInView={{ opacity: 1 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.4, delay: index * 0.1 }}
                             className="group"
@@ -129,7 +129,7 @@ export function FeaturedProducts() {
                                             </span>
                                         </div>
                                         <Button
-                                            className="w-full mt-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0"
+                                            className="w-full mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                                             size="sm"
                                             disabled={product.stock <= 0}
                                             onClick={(e) => handleAddToCart(e, product)}
