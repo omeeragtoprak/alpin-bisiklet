@@ -28,6 +28,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { createAddressSchema, type CreateAddressInput } from "@/lib/validations";
 import { formatTurkishPhone } from "@/lib/phone";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { TURKEY_CITIES, getDistricts, CITY_NAMES } from "@/data/turkey-cities";
 
 interface Address {
@@ -203,13 +204,11 @@ export default function AddressesPage() {
                           <FormItem>
                             <FormLabel>Telefon *</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="05XX XXX XX XX"
-                                inputMode="tel"
-                                {...field}
-                                onChange={(e) => {
-                                  field.onChange(formatTurkishPhone(e.target.value));
-                                }}
+                              <PhoneInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                onBlur={field.onBlur}
+                                name={field.name}
                               />
                             </FormControl>
                             <FormMessage />

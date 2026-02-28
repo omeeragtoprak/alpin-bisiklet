@@ -17,6 +17,7 @@ interface CartState {
     addItem: (item: Omit<CartItem, 'quantity'>) => void;
     removeItem: (id: string, variantId?: string) => void;
     updateQuantity: (id: string, quantity: number, variantId?: string) => void;
+    updateItemPrice: (id: string, price: number, variantId?: string) => void;
     clearCart: () => void;
     isOpen: boolean;
     toggleCart: () => void;
@@ -77,6 +78,14 @@ export const useCartStore = create<CartState>()(
                         ),
                     };
                 });
+            },
+
+            updateItemPrice: (id, price, variantId) => {
+                set((state) => ({
+                    items: state.items.map((i) =>
+                        i.id === id && i.variantId === variantId ? { ...i, price } : i
+                    ),
+                }));
             },
 
             clearCart: () => set({ items: [] }),

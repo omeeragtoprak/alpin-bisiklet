@@ -6,8 +6,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/use-cart-store";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { getProductPricing, type ActiveDiscount } from "@/lib/pricing";
 
 export function CartDrawer() {
   const {
@@ -16,14 +17,65 @@ export function CartDrawer() {
     items,
     removeItem,
     updateQuantity,
+    updateItemPrice,
     getCartTotal
   } = useCartStore();
 
   const [mounted, setMounted] = useState(false);
+  const refreshedRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Sepet açıldığında anlık fiyatları API'den çek ve güncelle
+  useEffect(() => {
+    if (!isOpen || items.length === 0) {
+      refreshedRef.current = false;
+      return;
+    }
+    if (refreshedRef.current) return;
+    refreshedRef.current = true;
+
+    const refreshPrices = async () => {
+      try {
+        // Aktif indirimleri ve ürün fiyatlarını paralel çek
+        const [discountsRes, ...productReses] = await Promise.all([
+          fetch("/api/discounts?isActive=true"),
+          ...items.map((item) => fetch(`/api/products/slug/${item.slug}`)),
+        ]);
+
+        const discountsData = await discountsRes.json();
+        const activeDiscounts: ActiveDiscount[] = discountsData?.data ?? [];
+
+        for (let i = 0; i < items.length; i++) {
+          const productRes = productReses[i];
+          if (!productRes.ok) continue;
+          const productData = await productRes.json();
+          const product = productData?.data;
+          if (!product) continue;
+
+          // Ürüne uygulanabilir toplu indirimleri filtrele
+          const applicable = activeDiscounts.filter(
+            (d) =>
+              d.type === "STORE_WIDE" ||
+              (d.type === "CATEGORY" && d.categoryId === product.category?.id) ||
+              (d.type === "ON_SALE" &&
+                product.comparePrice != null &&
+                product.comparePrice > product.price),
+          );
+
+          const { effectivePrice } = getProductPricing(product, applicable);
+          updateItemPrice(items[i].id, effectivePrice, items[i].variantId);
+        }
+      } catch {
+        // Sessizce geç — Zustand'daki fiyat gösterilir
+      }
+    };
+
+    refreshPrices();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!mounted) return null;
 
@@ -86,7 +138,7 @@ export function CartDrawer() {
                 <div className="mt-2 h-1.5 w-full bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary transition-all duration-500"
-                    style={{ width: `${(subtotal / shippingThreshold) * 100}%` }}
+                    style={{ width: `${Math.min((subtotal / shippingThreshold) * 100, 100)}%` }}
                   />
                 </div>
               </div>
@@ -136,7 +188,11 @@ export function CartDrawer() {
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
                         <div>
-                          <Link href={`/urun/${item.slug}`} className="font-medium text-sm line-clamp-2 hover:text-primary transition-colors" onClick={closeCart}>
+                          <Link
+                            href={`/urunler/${item.slug}`}
+                            className="font-medium text-sm line-clamp-2 hover:text-primary transition-colors"
+                            onClick={closeCart}
+                          >
                             {item.name}
                           </Link>
                           {item.variantId && (

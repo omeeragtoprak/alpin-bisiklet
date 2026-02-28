@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
 			customerNote,
 		} = body;
 
-		// Sepeti getir
-		const cart = await prisma.cart.findFirst({
+		// Sepeti getir (DB veya client-side Zustand)
+		const dbCart = await prisma.cart.findFirst({
 			where: { userId: session.user.id },
 			include: {
 				items: {
@@ -35,7 +35,56 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		if (!cart || cart.items.length === 0) {
+		type CartItemRow = {
+			id: number | string;
+			cartId: string;
+			productId: number;
+			variantId: string | null;
+			quantity: number;
+			createdAt: Date;
+			updatedAt: Date;
+			product: Awaited<ReturnType<typeof prisma.product.findFirstOrThrow>>;
+			variant: null | { id: string; price: unknown; name: string; sku: string | null };
+		};
+
+		let effectiveItems: CartItemRow[];
+		let dbCartId: string | null = dbCart?.id ?? null;
+
+		if (dbCart && dbCart.items.length > 0) {
+			effectiveItems = dbCart.items as CartItemRow[];
+		} else if (body.cartItems && Array.isArray(body.cartItems) && body.cartItems.length > 0) {
+			// Zustand mağazasından gelen sepet öğelerini DB'den doğrula
+			const clientItems = body.cartItems as Array<{
+				productId: string | number;
+				variantId?: string | null;
+				quantity: number;
+			}>;
+			const productIds = clientItems.map((i) => Number(i.productId));
+			const products = await prisma.product.findMany({
+				where: { id: { in: productIds }, isActive: true },
+			});
+			effectiveItems = clientItems
+				.map((ci, idx) => {
+					const product = products.find((p) => p.id === Number(ci.productId));
+					if (!product) return null;
+					return {
+						id: idx,
+						cartId: "",
+						productId: Number(ci.productId),
+						variantId: ci.variantId ?? null,
+						quantity: ci.quantity,
+						createdAt: new Date(),
+						updatedAt: new Date(),
+						product,
+						variant: null,
+					} as CartItemRow;
+				})
+				.filter((x): x is CartItemRow => x !== null);
+		} else {
+			return NextResponse.json({ error: "Sepet boş" }, { status: 400 });
+		}
+
+		if (effectiveItems.length === 0) {
 			return NextResponse.json({ error: "Sepet boş" }, { status: 400 });
 		}
 
@@ -52,8 +101,8 @@ export async function POST(request: NextRequest) {
 
 		// Fiyat hesapla — güvenlik: client fiyatı görmezden gel, server-side hesapla
 		let subtotal = 0;
-		const itemPrices: Record<number, number> = {};
-		for (const item of cart.items) {
+		const itemPrices: Record<number | string, number> = {};
+		for (const item of effectiveItems) {
 			let effectivePrice: number;
 			if (item.variant?.price != null) {
 				effectivePrice = Number(item.variant.price);
@@ -123,7 +172,7 @@ export async function POST(request: NextRequest) {
 					let applicableSubtotal = subtotal;
 					if (hasCategoryScope || hasProductScope) {
 						applicableSubtotal = 0;
-						for (const item of cart.items) {
+						for (const item of effectiveItems) {
 							const ep = itemPrices[item.id] ?? Number(item.variant?.price || item.product.price);
 							const catId = item.product.categoryId;
 							const inScope =
@@ -171,7 +220,8 @@ export async function POST(request: NextRequest) {
 				couponId: appliedCouponId,
 				customerNote,
 				items: {
-					create: cart.items.map((item) => {
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					create: effectiveItems.map((item) => {
 						const ep = itemPrices[item.id] ?? Number(item.variant?.price || item.product.price);
 						return {
 							productId: item.productId,
@@ -183,7 +233,8 @@ export async function POST(request: NextRequest) {
 							price: ep,
 							total: ep * item.quantity,
 						};
-					}),
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					}) as any[],
 				},
 				statusHistory: {
 					create: {
@@ -207,10 +258,12 @@ export async function POST(request: NextRequest) {
 			});
 		}
 
-		// Sepeti temizle
-		await prisma.cartItem.deleteMany({
-			where: { cartId: cart.id },
-		});
+		// Sepeti temizle (sadece DB sepeti varsa)
+		if (dbCartId) {
+			await prisma.cartItem.deleteMany({
+				where: { cartId: dbCartId },
+			});
+		}
 
 		return NextResponse.json({ data: order }, { status: 201 });
 	} catch (error) {

@@ -19,10 +19,24 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useCartStore } from "@/store/use-cart-store";
+import { PhoneInput } from "@/components/ui/phone-input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { CITY_NAMES, getDistricts } from "@/data/turkey-cities";
+import { TURKISH_PHONE_REGEX } from "@/lib/phone";
+import { useSession } from "@/lib/auth-client";
+import { Tag, X, Info } from "lucide-react";
 
 interface Address {
     id: string;
@@ -45,6 +59,14 @@ export default function CheckoutPage() {
     const [selectedAddressId, setSelectedAddressId] = useState<string>("");
     const [showNewAddress, setShowNewAddress] = useState(false);
     const [customerNote, setCustomerNote] = useState("");
+    const [couponInput, setCouponInput] = useState("");
+    const [couponCode, setCouponCode] = useState("");
+    const [couponDiscount, setCouponDiscount] = useState(0);
+    const [couponMessage, setCouponMessage] = useState("");
+    const [couponApplied, setCouponApplied] = useState(false);
+    const [phoneError, setPhoneError] = useState("");
+
+    const { data: session } = useSession();
     const [newAddress, setNewAddress] = useState({
         title: "",
         firstName: "",
@@ -58,15 +80,8 @@ export default function CheckoutPage() {
         isDefault: false,
     });
 
-    // Fetch cart
-    const { data: cartData, isLoading: cartLoading } = useQuery({
-        queryKey: ["checkout-cart"],
-        queryFn: async () => {
-            const res = await fetch("/api/cart");
-            const json = await res.json();
-            return json.data;
-        },
-    });
+    // Cart from Zustand store (client-side, persisted in localStorage)
+    const { items, clearCart } = useCartStore();
 
     // Fetch addresses
     const {
@@ -108,6 +123,40 @@ export default function CheckoutPage() {
         },
     });
 
+    // Coupon validate mutation
+    const validateCouponMutation = useMutation({
+        mutationFn: async (code: string) => {
+            const res = await fetch("/api/coupons/validate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    code,
+                    items: items.map((item) => ({
+                        productId: Number(item.id),
+                        quantity: item.quantity,
+                        price: item.price,
+                    })),
+                }),
+            });
+            return res.json();
+        },
+        onSuccess: (data) => {
+            if (data.valid) {
+                setCouponDiscount(data.discount);
+                setCouponApplied(true);
+                setCouponCode(couponInput);
+                setCouponMessage(data.message);
+                toast({ title: "Kupon uygulandı!", description: data.message });
+            } else {
+                setCouponDiscount(0);
+                setCouponApplied(false);
+                setCouponCode("");
+                setCouponMessage(data.message);
+                toast({ title: "Kupon geçersiz", description: data.message, variant: "destructive" });
+            }
+        },
+    });
+
     // Place order mutation
     const placeOrderMutation = useMutation({
         mutationFn: async () => {
@@ -119,6 +168,12 @@ export default function CheckoutPage() {
                     billingAddressId: selectedAddressId,
                     paymentMethod: "BANK_TRANSFER",
                     customerNote,
+                    couponCode: couponApplied ? couponCode : undefined,
+                    cartItems: items.map((item) => ({
+                        productId: item.id,
+                        variantId: item.variantId ?? null,
+                        quantity: item.quantity,
+                    })),
                 }),
             });
             if (!res.ok) {
@@ -128,6 +183,7 @@ export default function CheckoutPage() {
             return res.json();
         },
         onSuccess: (data) => {
+            clearCart();
             toast({ title: "Sipariş oluşturuldu!", description: `Sipariş No: ${data.data.orderNumber}` });
             router.push(`/hesabim/siparislerim`);
         },
@@ -148,24 +204,11 @@ export default function CheckoutPage() {
         }
     }, [addressesData, selectedAddressId]);
 
-    const items = cartData?.items || [];
-    const subtotal = items.reduce((sum: number, item: any) => {
-        const price = item.variant?.price || item.product.price;
-        return sum + Number(price) * item.quantity;
-    }, 0);
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const shippingCost = subtotal >= 500 ? 0 : 50;
-    const total = subtotal + shippingCost;
+    const total = subtotal + shippingCost - couponDiscount;
 
-    if (cartLoading) {
-        return (
-            <div className="container mx-auto px-4 py-16 text-center">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-                <p className="mt-4 text-muted-foreground">Yükleniyor...</p>
-            </div>
-        );
-    }
-
-    if (!cartData || items.length === 0) {
+    if (items.length === 0) {
         return (
             <div className="container mx-auto px-4 py-16 text-center">
                 <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
@@ -358,20 +401,17 @@ export default function CheckoutPage() {
                                                         <Label>
                                                             Telefon*
                                                         </Label>
-                                                        <Input
-                                                            placeholder="05XX XXX XX XX"
-                                                            value={
-                                                                newAddress.phone
-                                                            }
-                                                            onChange={(e) =>
-                                                                setNewAddress({
-                                                                    ...newAddress,
-                                                                    phone: e
-                                                                        .target
-                                                                        .value,
-                                                                })
-                                                            }
+                                                        <PhoneInput
+                                                            value={newAddress.phone}
+                                                            onChange={(value) => {
+                                                                setNewAddress({ ...newAddress, phone: value });
+                                                                setPhoneError("");
+                                                            }}
+                                                            className={phoneError ? "border-destructive" : ""}
                                                         />
+                                                        {phoneError && (
+                                                            <p className="text-xs text-destructive mt-1">{phoneError}</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
@@ -413,75 +453,92 @@ export default function CheckoutPage() {
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
                                                         <Label>İl*</Label>
-                                                        <Input
-                                                            value={
-                                                                newAddress.city
-                                                            }
-                                                            onChange={(e) =>
+                                                        <Select
+                                                            value={newAddress.city}
+                                                            onValueChange={(v) =>
                                                                 setNewAddress({
                                                                     ...newAddress,
-                                                                    city: e
-                                                                        .target
-                                                                        .value,
+                                                                    city: v,
+                                                                    district: "",
                                                                 })
                                                             }
-                                                        />
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="İl seçiniz" />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="max-h-60">
+                                                                {CITY_NAMES.map((city) => (
+                                                                    <SelectItem key={city} value={city}>
+                                                                        {city}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </div>
                                                     <div>
-                                                        <Label>
-                                                            İlçe*
-                                                        </Label>
-                                                        <Input
-                                                            value={
-                                                                newAddress.district
+                                                        <Label>İlçe*</Label>
+                                                        <Select
+                                                            value={newAddress.district}
+                                                            onValueChange={(v) =>
+                                                                setNewAddress({ ...newAddress, district: v })
                                                             }
-                                                            onChange={(e) =>
-                                                                setNewAddress({
-                                                                    ...newAddress,
-                                                                    district:
-                                                                        e.target
-                                                                            .value,
-                                                                })
-                                                            }
-                                                        />
+                                                            disabled={!newAddress.city}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue
+                                                                    placeholder={newAddress.city ? "İlçe seçiniz" : "Önce il seçiniz"}
+                                                                />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="max-h-60">
+                                                                {getDistricts(newAddress.city).map((d) => (
+                                                                    <SelectItem key={d} value={d}>
+                                                                        {d}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <Label>
                                                         Adres Detayı*
                                                     </Label>
-                                                    <Input
+                                                    <Textarea
                                                         placeholder="Mahalle, sokak, bina no..."
-                                                        value={
-                                                            newAddress.address
-                                                        }
+                                                        rows={3}
+                                                        value={newAddress.address}
                                                         onChange={(e) =>
                                                             setNewAddress({
                                                                 ...newAddress,
-                                                                address:
-                                                                    e.target
-                                                                        .value,
+                                                                address: e.target.value,
                                                             })
                                                         }
                                                     />
                                                 </div>
+                                                {session && (
+                                                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                        <Info className="h-3.5 w-3.5 shrink-0" />
+                                                        Bu adres hesabınıza da kaydedilecektir.
+                                                    </p>
+                                                )}
+
                                                 <div className="flex gap-2 justify-end">
                                                     <Button
                                                         variant="ghost"
                                                         onClick={() =>
-                                                            setShowNewAddress(
-                                                                false,
-                                                            )
+                                                            setShowNewAddress(false)
                                                         }
                                                     >
                                                         İptal
                                                     </Button>
                                                     <Button
-                                                        onClick={() =>
-                                                            createAddressMutation.mutate(
-                                                                newAddress,
-                                                            )
-                                                        }
+                                                        onClick={() => {
+                                                            if (!TURKISH_PHONE_REGEX.test(newAddress.phone)) {
+                                                                setPhoneError("Geçerli bir telefon numarası girin (05XX XXX XX XX)");
+                                                                return;
+                                                            }
+                                                            createAddressMutation.mutate(newAddress);
+                                                        }}
                                                         disabled={
                                                             createAddressMutation.isPending
                                                         }
@@ -555,62 +612,35 @@ export default function CheckoutPage() {
 
                                     {/* Items */}
                                     <div className="space-y-3">
-                                        {items.map((item: any) => {
-                                            const price =
-                                                item.variant?.price ||
-                                                item.product.price;
-                                            return (
-                                                <div
-                                                    key={item.id}
-                                                    className="flex items-center gap-3"
-                                                >
-                                                    <div className="w-14 h-14 bg-muted rounded-lg overflow-hidden relative shrink-0">
-                                                        {item.product
-                                                            .images?.[0]
-                                                            ?.url && (
-                                                                <Image
-                                                                    src={
-                                                                        item.product
-                                                                            .images[0]
-                                                                            .url
-                                                                    }
-                                                                    alt={
-                                                                        item.product
-                                                                            .name
-                                                                    }
-                                                                    fill
-                                                                    className="object-cover"
-                                                                    sizes="56px"
-                                                                />
-                                                            )}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium truncate">
-                                                            {item.product.name}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {item.quantity}{" "}
-                                                            adet ×{" "}
-                                                            {Number(
-                                                                price,
-                                                            ).toLocaleString(
-                                                                "tr-TR",
-                                                            )}{" "}
-                                                            TL
-                                                        </p>
-                                                    </div>
-                                                    <p className="font-medium text-sm">
-                                                        {(
-                                                            Number(price) *
-                                                            item.quantity
-                                                        ).toLocaleString(
-                                                            "tr-TR",
-                                                        )}{" "}
-                                                        TL
+                                        {items.map((item) => (
+                                            <div
+                                                key={`${item.id}-${item.variantId ?? ""}`}
+                                                className="flex items-center gap-3"
+                                            >
+                                                <div className="w-14 h-14 bg-muted rounded-lg overflow-hidden relative shrink-0">
+                                                    {item.image && (
+                                                        <Image
+                                                            src={item.image}
+                                                            alt={item.name}
+                                                            fill
+                                                            className="object-cover"
+                                                            sizes="56px"
+                                                        />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium truncate">
+                                                        {item.name}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {item.quantity} adet × {item.price.toLocaleString("tr-TR")} TL
                                                     </p>
                                                 </div>
-                                            );
-                                        })}
+                                                <p className="font-medium text-sm">
+                                                    {(item.price * item.quantity).toLocaleString("tr-TR")} TL
+                                                </p>
+                                            </div>
+                                        ))}
                                     </div>
 
                                     {/* Customer Note */}
@@ -800,6 +830,72 @@ export default function CheckoutPage() {
                                         )}
                                     </span>
                                 </div>
+                                {couponApplied && (
+                                    <div className="flex justify-between text-green-600">
+                                        <span className="flex items-center gap-1">
+                                            <Tag className="h-3 w-3" />
+                                            Kupon ({couponCode})
+                                        </span>
+                                        <span>-{couponDiscount.toLocaleString("tr-TR")} TL</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Coupon input */}
+                            <div className="space-y-2">
+                                {couponApplied ? (
+                                    <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-md">
+                                        <Tag className="h-4 w-4 text-green-600 shrink-0" />
+                                        <span className="text-sm text-green-700 dark:text-green-400 flex-1 font-medium">
+                                            {couponCode} uygulandı
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setCouponApplied(false);
+                                                setCouponDiscount(0);
+                                                setCouponCode("");
+                                                setCouponInput("");
+                                                setCouponMessage("");
+                                            }}
+                                            className="text-green-600 hover:text-green-800"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                placeholder="Kupon kodu"
+                                                value={couponInput}
+                                                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" && couponInput.trim()) {
+                                                        validateCouponMutation.mutate(couponInput.trim());
+                                                    }
+                                                }}
+                                                className="uppercase text-sm"
+                                            />
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => validateCouponMutation.mutate(couponInput.trim())}
+                                                disabled={!couponInput.trim() || validateCouponMutation.isPending}
+                                                className="shrink-0"
+                                            >
+                                                {validateCouponMutation.isPending ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    "Uygula"
+                                                )}
+                                            </Button>
+                                        </div>
+                                        {couponMessage && !couponApplied && (
+                                            <p className="text-xs text-destructive">{couponMessage}</p>
+                                        )}
+                                    </>
+                                )}
                             </div>
 
                             <Separator />
@@ -807,7 +903,7 @@ export default function CheckoutPage() {
                             <div className="flex justify-between text-lg font-bold">
                                 <span>Toplam</span>
                                 <span className="text-primary">
-                                    {total.toLocaleString("tr-TR")} TL
+                                    {Math.max(0, total).toLocaleString("tr-TR")} TL
                                 </span>
                             </div>
 

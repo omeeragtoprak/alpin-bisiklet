@@ -8,6 +8,7 @@ import { Loader2, Search, Barcode, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	Form,
@@ -529,7 +530,12 @@ export function EldenTaksitPlanForm() {
 									<FormItem>
 										<FormLabel>Telefon *</FormLabel>
 										<FormControl>
-											<Input placeholder="05xx xxx xx xx" {...field} />
+											<PhoneInput
+												value={field.value}
+												onChange={field.onChange}
+												onBlur={field.onBlur}
+												name={field.name}
+											/>
 										</FormControl>
 										<FormMessage />
 									</FormItem>
