@@ -126,7 +126,7 @@ function CategoryCard({
 
     return (
         <Link
-            href={`/urunler?categoryId=${category.id}`}
+            href={`/kategoriler/${category.slug}`}
             className="group block relative h-full rounded-2xl overflow-hidden"
         >
             {/* Background images with crossfade */}
