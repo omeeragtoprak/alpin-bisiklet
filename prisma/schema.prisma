@@ -127,6 +127,7 @@ model Category {
   children       Category[]       @relation("CategoryToCategory")
   products       Product[]
   couponCategories CouponCategory[]
+  discounts      Discount[]
 
   @@map("categories")
 }
@@ -612,4 +613,26 @@ enum EldenTaksitStatus {
   ACTIVE
   COMPLETED
   CANCELLED
+}
+
+enum DiscountType {
+  CATEGORY
+  STORE_WIDE
+  ON_SALE
+}
+
+model Discount {
+  id         Int          @id @default(autoincrement())
+  name       String
+  type       DiscountType @default(CATEGORY)
+  categoryId Int?
+  value      Float
+  isActive   Boolean      @default(true)
+  validFrom  DateTime?
+  validTo    DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  category   Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@map("discounts")
 }

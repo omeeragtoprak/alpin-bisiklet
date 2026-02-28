@@ -9,8 +9,9 @@ import { ProductListItem } from "@/types";
 import { useCartStore } from "@/store/use-cart-store";
 import { useToast } from "@/hooks/use-toast";
 import { authClient } from "@/lib/auth-client";
-import { useFavoriteIds, useToggleFavorite } from "@/hooks";
+import { useFavoriteIds, useToggleFavorite, useActiveDiscounts } from "@/hooks";
 import { getProductPricing } from "@/lib/pricing";
+import type { ActiveDiscount } from "@/lib/pricing";
 
 interface ProductCardProps {
 	product: ProductListItem;
@@ -25,7 +26,13 @@ export function ProductCard({ product }: ProductCardProps) {
 	const toggleFavorite = useToggleFavorite();
 
 	const isFavorited = favoriteIds.has(product.id);
-	const pricing = getProductPricing(product);
+	const { data: discountsData } = useActiveDiscounts();
+	const applicable = (discountsData?.data ?? []).filter((d: ActiveDiscount) =>
+		d.type === "STORE_WIDE" ||
+		(d.type === "CATEGORY" && d.categoryId === product.category?.id) ||
+		(d.type === "ON_SALE" && product.comparePrice != null && product.comparePrice > product.price),
+	);
+	const pricing = getProductPricing(product, applicable);
 
 	const handleAddToCart = (e: React.MouseEvent) => {
 		e.preventDefault();
@@ -94,6 +101,11 @@ export function ProductCard({ product }: ProductCardProps) {
 					{pricing.isOnSale && (
 						<span className="bg-destructive text-white text-[10px] font-bold px-2.5 py-1 rounded-md">
 							%{pricing.discountPercent} İndirim
+						</span>
+					)}
+					{pricing.extraDiscount && (
+						<span className="bg-orange-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md">
+							Ek %{Math.round(pricing.extraDiscount.value)} İndirim
 						</span>
 					)}
 					{product.stock <= 0 && (

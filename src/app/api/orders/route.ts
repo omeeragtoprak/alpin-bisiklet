@@ -39,6 +39,17 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Sepet boş" }, { status: 400 });
 		}
 
+		// Aktif toplu indirimler
+		const now = new Date();
+		const activeDiscounts = await prisma.discount.findMany({
+			where: {
+				isActive: true,
+				OR: [{ validFrom: null }, { validFrom: { lte: now } }],
+				AND: [{ OR: [{ validTo: null }, { validTo: { gte: now } }] }],
+			},
+			include: { category: { select: { id: true } } },
+		});
+
 		// Fiyat hesapla — güvenlik: client fiyatı görmezden gel, server-side hesapla
 		let subtotal = 0;
 		const itemPrices: Record<number, number> = {};
@@ -47,7 +58,14 @@ export async function POST(request: NextRequest) {
 			if (item.variant?.price != null) {
 				effectivePrice = Number(item.variant.price);
 			} else {
-				const pricing = getProductPricing(item.product);
+				const applicable = activeDiscounts.filter((d) =>
+					d.type === "STORE_WIDE" ||
+					(d.type === "CATEGORY" && d.category?.id === item.product.categoryId) ||
+					(d.type === "ON_SALE" &&
+						item.product.comparePrice != null &&
+						item.product.comparePrice > item.product.price),
+				);
+				const pricing = getProductPricing(item.product, applicable);
 				effectivePrice = pricing.effectivePrice;
 			}
 			itemPrices[item.id] = effectivePrice;

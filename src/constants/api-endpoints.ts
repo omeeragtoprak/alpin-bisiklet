@@ -32,4 +32,8 @@ export const API_ENDPOINTS = {
   // Users (ileride eklenecek)
   USERS: `${BASE_URL}/api/users`,
   USER: (id: number) => `${BASE_URL}/api/users/${id}`,
+
+  // Discounts
+  DISCOUNTS: `${BASE_URL}/api/discounts`,
+  DISCOUNT: (id: number) => `${BASE_URL}/api/discounts/${id}`,
 } as const;

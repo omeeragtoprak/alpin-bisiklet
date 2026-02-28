@@ -43,8 +43,10 @@ import { SidebarBanner } from "@/components/store/banners/sidebar-banner";
 import { CategoryBanner } from "@/components/store/banners/category-banner";
 import { useCartStore } from "@/store/use-cart-store";
 import { authClient } from "@/lib/auth-client";
-import { useFavoriteIds, useToggleFavorite } from "@/hooks";
+import { useFavoriteIds, useToggleFavorite, useActiveDiscounts } from "@/hooks";
 import { useToast } from "@/hooks/use-toast";
+import { getProductPricing } from "@/lib/pricing";
+import type { ActiveDiscount } from "@/lib/pricing";
 
 // ─── Filtre Sidebar ────────────────────────────────────────────────────────────
 // Checkbox ile çoklu seçim. "Filtre Uygula"ya basılana kadar hiç API isteği gitmez.
@@ -283,6 +285,13 @@ function ProductCard({
 	const favoriteIds = useFavoriteIds();
 	const toggleFavorite = useToggleFavorite();
 	const isFavorited = favoriteIds.has(product.id);
+	const { data: discountsData } = useActiveDiscounts();
+	const applicable = (discountsData?.data ?? []).filter((d: ActiveDiscount) =>
+		d.type === "STORE_WIDE" ||
+		(d.type === "CATEGORY" && d.categoryId === product.category?.id) ||
+		(d.type === "ON_SALE" && product.comparePrice != null && product.comparePrice > product.price),
+	);
+	const pricing = getProductPricing(product, applicable);
 
 	const handleAddToCart = (e: React.MouseEvent) => {
 		e.preventDefault();
@@ -290,7 +299,7 @@ function ProductCard({
 		onAddToCart({
 			id: product.id.toString(),
 			name: product.name,
-			price: product.price,
+			price: pricing.effectivePrice,
 			image: product.images?.[0]?.url || "",
 			slug: product.slug,
 			category: product.category?.name || "",
@@ -330,9 +339,14 @@ function ProductCard({
 							Görsel Yok
 						</div>
 					)}
-					{product.comparePrice > product.price && (
+					{pricing.isOnSale && (
 						<div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
-							%{Math.round((1 - product.price / product.comparePrice) * 100)} İNDİRİM
+							%{pricing.discountPercent} İNDİRİM
+						</div>
+					)}
+					{pricing.extraDiscount && (
+						<div className="absolute bottom-2 left-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+							Ek %{Math.round(pricing.extraDiscount.value)} İndirim
 						</div>
 					)}
 					{product.isFeatured && (
@@ -382,11 +396,11 @@ function ProductCard({
 					<div className="shrink-0 flex flex-col items-end gap-3">
 						<div className="text-right">
 							<div className="text-lg sm:text-xl font-bold text-primary">
-								{Number(product.price).toLocaleString("tr-TR")} TL
+								{pricing.effectivePrice.toLocaleString("tr-TR")} TL
 							</div>
-							{product.comparePrice > product.price && (
+							{pricing.originalPrice != null && (
 								<div className="text-xs text-muted-foreground line-through">
-									{Number(product.comparePrice).toLocaleString("tr-TR")} TL
+									{pricing.originalPrice.toLocaleString("tr-TR")} TL
 								</div>
 							)}
 						</div>
@@ -398,7 +412,7 @@ function ProductCard({
 								onAddToCart({
 									id: product.id.toString(),
 									name: product.name,
-									price: product.price,
+									price: pricing.effectivePrice,
 									image: product.images?.[0]?.url || "",
 									slug: product.slug,
 									category: product.category?.name || "",
@@ -436,9 +450,14 @@ function ProductCard({
 
 				{/* Badge'ler */}
 				<div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-					{product.comparePrice > product.price && (
+					{pricing.isOnSale && (
 						<span className="bg-destructive text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-							%{Math.round((1 - product.price / product.comparePrice) * 100)} İndirim
+							%{pricing.discountPercent} İndirim
+						</span>
+					)}
+					{pricing.extraDiscount && (
+						<span className="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+							Ek %{Math.round(pricing.extraDiscount.value)} İndirim
 						</span>
 					)}
 					{product.isFeatured && (
@@ -498,11 +517,11 @@ function ProductCard({
 				)}
 				<div className="flex items-baseline gap-2 flex-wrap">
 					<span className="font-bold text-primary">
-						{Number(product.price).toLocaleString("tr-TR")} TL
+						{pricing.effectivePrice.toLocaleString("tr-TR")} TL
 					</span>
-					{product.comparePrice > product.price && (
+					{pricing.originalPrice != null && (
 						<span className="text-xs text-muted-foreground line-through">
-							{Number(product.comparePrice).toLocaleString("tr-TR")} TL
+							{pricing.originalPrice.toLocaleString("tr-TR")} TL
 						</span>
 					)}
 				</div>

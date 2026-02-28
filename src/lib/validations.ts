@@ -409,3 +409,22 @@ export const markInstallmentPaidSchema = z.object({
 export type CreateEldenTaksitInput = z.infer<typeof createEldenTaksitSchema>;
 export type UpdateEldenTaksitInput = z.infer<typeof updateEldenTaksitSchema>;
 export type MarkInstallmentPaidInput = z.infer<typeof markInstallmentPaidSchema>;
+
+// ============================================
+// İNDİRİM SCHEMA'LARI
+// ============================================
+
+export const createDiscountSchema = z.object({
+  name: z.string().min(2, "Ad en az 2 karakter"),
+  type: z.enum(["CATEGORY", "STORE_WIDE", "ON_SALE"]),
+  categoryId: z.number().int().positive().optional().nullable(),
+  value: z.number().positive().max(100, "Maks %100"),
+  isActive: z.boolean().default(true),
+  validFrom: z.string().optional().nullable(),
+  validTo: z.string().optional().nullable(),
+});
+
+export const updateDiscountSchema = createDiscountSchema.partial();
+
+export type CreateDiscountInput = z.infer<typeof createDiscountSchema>;
+export type UpdateDiscountInput = z.infer<typeof updateDiscountSchema>;

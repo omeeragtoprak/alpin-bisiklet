@@ -94,4 +94,12 @@ export const QUERY_KEYS = {
     details: () => [...QUERY_KEYS.eldenTaksit.all, "detail"] as const,
     detail: (id: number) => [...QUERY_KEYS.eldenTaksit.details(), id] as const,
   },
+
+  // Discounts
+  discounts: {
+    all: ["discounts"] as const,
+    lists: () => [...QUERY_KEYS.discounts.all, "list"] as const,
+    active: () => [...QUERY_KEYS.discounts.all, "active"] as const,
+    detail: (id: number) => [...QUERY_KEYS.discounts.all, id] as const,
+  },
 } as const;

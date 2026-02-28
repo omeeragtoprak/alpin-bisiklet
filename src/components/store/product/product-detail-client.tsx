@@ -36,10 +36,11 @@ import { SimilarProducts } from "@/components/store/product/similar-products";
 import { ProductBanner } from "@/components/store/banners/product-banner";
 import { ComplementaryProducts } from "@/components/store/product/complementary-products";
 import { ProductChainSound } from "@/components/store/product/product-chain-sound";
-import { useFavoriteIds, useToggleFavorite } from "@/hooks";
+import { useFavoriteIds, useToggleFavorite, useActiveDiscounts } from "@/hooks";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { getProductPricing } from "@/lib/pricing";
+import type { ActiveDiscount } from "@/lib/pricing";
 
 const ProductModelViewer = dynamic(
 	() =>
@@ -171,7 +172,13 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 
 	const isFavorited = favoriteIds.has(product.id);
 
-	const pricing = getProductPricing(product);
+	const { data: discountsData } = useActiveDiscounts();
+	const applicable = (discountsData?.data ?? []).filter((d: ActiveDiscount) =>
+		d.type === "STORE_WIDE" ||
+		(d.type === "CATEGORY" && d.categoryId === product.category?.id) ||
+		(d.type === "ON_SALE" && product.comparePrice != null && product.comparePrice > product.price),
+	);
+	const pricing = getProductPricing(product, applicable);
 	const { effectivePrice, originalPrice, discountPercent } = pricing;
 
 	return (
@@ -380,6 +387,11 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 						{discountPercent > 0 && (
 							<span className="bg-red-100 text-red-700 text-sm font-semibold px-2 py-0.5 rounded">
 								%{discountPercent} İndirim
+							</span>
+						)}
+						{pricing.extraDiscount && (
+							<span className="bg-orange-100 text-orange-700 text-sm font-semibold px-2 py-0.5 rounded">
+								Ek %{Math.round(pricing.extraDiscount.value)} İndirim
 							</span>
 						)}
 					</div>

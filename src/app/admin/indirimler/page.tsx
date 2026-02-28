@@ -41,7 +41,7 @@ export default async function DiscountsPage() {
     <div className="space-y-6">
       <PageHeader
         title="İndirimler"
-        description="Karşılaştırma fiyatı olan ürünlerin indirim listesi"
+        description="Toplu indirimler ve indirimli ürün yönetimi"
       />
       <DiscountsClient products={products} />
     </div>
