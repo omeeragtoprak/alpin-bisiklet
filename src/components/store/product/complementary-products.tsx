@@ -31,25 +31,6 @@ export function ComplementaryProducts({
 
 	if (products.length === 0) return null;
 
-	// Group products by category for badge coloring
-	const categoryColors: Record<string, string> = {};
-	const palette = [
-		"bg-blue-100 text-blue-700",
-		"bg-emerald-100 text-emerald-700",
-		"bg-violet-100 text-violet-700",
-		"bg-amber-100 text-amber-700",
-		"bg-rose-100 text-rose-700",
-		"bg-cyan-100 text-cyan-700",
-	];
-	let colorIndex = 0;
-	products.forEach((p) => {
-		const key = p.category?.name ?? "";
-		if (key && !categoryColors[key]) {
-			categoryColors[key] = palette[colorIndex % palette.length];
-			colorIndex++;
-		}
-	});
-
 	return (
 		<section className="py-12">
 			{/* Header */}
@@ -86,14 +67,6 @@ export function ComplementaryProducts({
 						transition={{ duration: 0.4, delay: index * 0.06 }}
 						className="relative"
 					>
-						{/* Category badge */}
-						{product.category?.name && (
-							<span
-								className={`absolute top-3 right-3 z-20 text-[10px] font-bold px-2 py-0.5 rounded-full ${categoryColors[product.category.name] ?? "bg-muted text-muted-foreground"}`}
-							>
-								{product.category.name}
-							</span>
-						)}
 						<ProductCard product={product} />
 					</motion.div>
 				))}

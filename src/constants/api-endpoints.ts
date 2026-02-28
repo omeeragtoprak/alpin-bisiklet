@@ -19,6 +19,12 @@ export const API_ENDPOINTS = {
     SIGN_OUT: `${BASE_URL}/api/auth/sign-out`,
   },
 
+  // Brands
+  BRANDS: `${BASE_URL}/api/brands`,
+
+  // Search
+  SEARCH: `${BASE_URL}/api/search`,
+
   // Orders (ileride eklenecek)
   ORDERS: `${BASE_URL}/api/orders`,
   ORDER: (id: number) => `${BASE_URL}/api/orders/${id}`,

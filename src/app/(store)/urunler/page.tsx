@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { BicycleFinder } from "@/components/store/bicycle-finder/bicycle-finder";
+import { SidebarBanner } from "@/components/store/banners/sidebar-banner";
+import { CategoryBanner } from "@/components/store/banners/category-banner";
 import { useCartStore } from "@/store/use-cart-store";
 import { authClient } from "@/lib/auth-client";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks";
@@ -813,6 +815,8 @@ export default function ProductsPage() {
 							{/* Filtre içeriği scroll eder */}
 							<div className="flex-1 overflow-y-auto min-h-0 pr-1">
 								<FilterSidebar {...sharedSidebarProps} />
+								{/* Sidebar banner */}
+								<SidebarBanner />
 							</div>
 							{/* Butonlar her zaman görünür — sidebar products alanının dışına çıkınca sayfa scroll'u ile kaybolur */}
 							<div className="shrink-0 pt-3 pb-3 space-y-2 border-t border-border/40 bg-background">
@@ -1047,6 +1051,9 @@ export default function ProductsPage() {
 								)}
 							</div>
 						)}
+
+						{/* Kategori banner — kategori seçiliyken gösterilir */}
+						{urlKategoriler.length > 0 && <CategoryBanner />}
 
 						{/* Ürün Grid */}
 						{isLoading ? (

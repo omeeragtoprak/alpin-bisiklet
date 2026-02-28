@@ -293,6 +293,8 @@ export function BannerForm({ initialData }: BannerFormProps) {
 							mobileImage={form.watch("mobileImage")}
 							buttonText={form.watch("buttonText")}
 							link={form.watch("link")}
+							position={form.watch("position")}
+							order={form.watch("order")}
 						/>
 						<Card>
 							<CardHeader>

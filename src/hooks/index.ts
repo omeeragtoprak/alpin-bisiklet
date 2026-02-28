@@ -1,4 +1,5 @@
 // Queries
+export * from "./queries/use-brands";
 export * from "./queries/use-favorites";
 export * from "./queries/use-banners";
 export * from "./queries/use-blog";

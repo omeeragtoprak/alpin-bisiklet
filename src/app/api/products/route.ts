@@ -31,7 +31,18 @@ export async function GET(request: NextRequest) {
 		const skip = (page - 1) * limit;
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const where: Record<string, any> = { isActive: true };
+		const where: Record<string, any> = {};
+
+		// isActive: "all" = tümü (admin), "true" = aktif, "false" = pasif, null/undefined = varsayılan aktif
+		if (isActive === "all") {
+			// Filtre yok — admin tüm ürünleri görebilir
+		} else if (isActive === "true") {
+			where.isActive = true;
+		} else if (isActive === "false") {
+			where.isActive = false;
+		} else {
+			where.isActive = true; // varsayılan: storefront için sadece aktif ürünler
+		}
 
 		if (search) {
 			where.OR = [
@@ -39,6 +50,8 @@ export async function GET(request: NextRequest) {
 				{ description: { contains: search, mode: "insensitive" } },
 				{ sku: { contains: search, mode: "insensitive" } },
 				{ barcode: { contains: search, mode: "insensitive" } },
+				{ brand: { name: { contains: search, mode: "insensitive" } } },
+				{ category: { name: { contains: search, mode: "insensitive" } } },
 			];
 		}
 
@@ -97,7 +110,7 @@ export async function GET(request: NextRequest) {
 			const ids = brandIds.split(",").filter(Boolean).map(Number);
 			if (ids.length > 0) where.brandId = { in: ids };
 		}
-		if (isActive !== null && isActive !== undefined) where.isActive = isActive === "true";
+		// isActive zaten yukarıda işlendi
 		if (isFeatured !== null) where.isFeatured = isFeatured === "true";
 		if (isNew !== null) where.isNew = isNew === "true";
 		if (hasDiscount === "true") where.comparePrice = { not: null };
@@ -123,10 +136,14 @@ export async function GET(request: NextRequest) {
 		// Sıralama
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		let orderByClause: Record<string, any> = { createdAt: "desc" };
-		if (orderBy === "price_asc") orderByClause = { price: "asc" };
-		else if (orderBy === "price_desc") orderByClause = { price: "desc" };
-		else if (orderBy === "name_asc") orderByClause = { name: "asc" };
-		else if (orderBy === "newest") orderByClause = { createdAt: "desc" };
+		if (orderBy === "price:asc" || orderBy === "price_asc") orderByClause = { price: "asc" };
+		else if (orderBy === "price:desc" || orderBy === "price_desc") orderByClause = { price: "desc" };
+		else if (orderBy === "name:asc" || orderBy === "name_asc") orderByClause = { name: "asc" };
+		else if (orderBy === "name:desc") orderByClause = { name: "desc" };
+		else if (orderBy === "stock:asc") orderByClause = { stock: "asc" };
+		else if (orderBy === "stock:desc") orderByClause = { stock: "desc" };
+		else if (orderBy === "createdAt:asc") orderByClause = { createdAt: "asc" };
+		else if (orderBy === "newest" || orderBy === "createdAt:desc") orderByClause = { createdAt: "desc" };
 
 		const [products, total] = await Promise.all([
 			prisma.product.findMany({

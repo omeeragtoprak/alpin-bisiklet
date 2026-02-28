@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, FlaskConical, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table/data-table";
@@ -12,6 +12,7 @@ import { TableSkeleton } from "@/components/admin/loading-skeleton";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { useAdminMutation } from "@/hooks/use-admin-mutation";
+import { useToast } from "@/hooks/use-toast";
 
 async function getBanners() {
   const res = await fetch("/api/banners");
@@ -21,6 +22,24 @@ async function getBanners() {
 
 export default function BannersPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; title: string } | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleSeedExamples = async () => {
+    setSeeding(true);
+    try {
+      const res = await fetch("/api/banners/seed-examples", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Hata");
+      toast({ title: "Örnek bannerlar oluşturuldu", description: data.message });
+      queryClient.invalidateQueries({ queryKey: ["banners"] });
+    } catch (err) {
+      toast({ title: "Hata", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["banners"],
@@ -58,6 +77,18 @@ export default function BannersPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Banner Yönetimi" description="Site bannerlarını ve slider görsellerini yönetin">
+        <Button
+          variant="outline"
+          onClick={handleSeedExamples}
+          disabled={seeding}
+        >
+          {seeding ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FlaskConical className="mr-2 h-4 w-4" />
+          )}
+          Örnek Oluştur
+        </Button>
         <Button asChild>
           <Link href="/admin/bannerlar/yeni">
             <Plus className="mr-2 h-4 w-4" />

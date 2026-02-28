@@ -47,6 +47,10 @@ export const QUERY_KEYS = {
     all: ["banners"] as const,
     active: () => [...QUERY_KEYS.banners.all, "active"] as const,
     hero: () => [...QUERY_KEYS.banners.active(), "hero"] as const,
+    sidebar: () => [...QUERY_KEYS.banners.active(), "sidebar"] as const,
+    category: () => [...QUERY_KEYS.banners.active(), "category"] as const,
+    product: () => [...QUERY_KEYS.banners.active(), "product"] as const,
+    popup: () => [...QUERY_KEYS.banners.active(), "popup"] as const,
   },
 
   // Blog
@@ -68,6 +72,18 @@ export const QUERY_KEYS = {
   favorites: {
     all: ["favorites"] as const,
     list: () => [...QUERY_KEYS.favorites.all, "list"] as const,
+  },
+
+  // Brands
+  brands: {
+    all: ["brands"] as const,
+    list: (filters?: Record<string, unknown>) => [...QUERY_KEYS.brands.all, "list", filters] as const,
+  },
+
+  // Search suggestions
+  search: {
+    all: ["search"] as const,
+    suggestions: (query: string) => [...QUERY_KEYS.search.all, "suggestions", query] as const,
   },
 
   // Elden Taksit

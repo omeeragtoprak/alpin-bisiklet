@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ParallaxHero } from "@/components/store/home/parallax-hero";
+import { HeroCarousel } from "@/components/store/home/hero-carousel";
 import { FeaturedCategories } from "@/components/store/home/featured-categories";
 import { ProductShowcase } from "@/components/store/home/product-showcase";
 import { NewProductsSection } from "@/components/store/home/new-products-section";
@@ -48,8 +48,8 @@ export default function StorePage() {
     <>
       <LocalBusinessSchema />
 
-      {/* Full-screen Parallax Hero */}
-      <ParallaxHero />
+      {/* Hero Carousel — default "Zirveye Pedalla" + DB banners */}
+      <HeroCarousel />
 
       {/* Trust Features Bar */}
       <HomeFeaturesBar />

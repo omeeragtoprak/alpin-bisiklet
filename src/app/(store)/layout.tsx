@@ -2,6 +2,7 @@ import { StoreHeader, StoreFooter, CartDrawer } from "@/components/store";
 import { PageTransition } from "@/components/animations";
 import { BlogPopup } from "@/components/store/blog-popup";
 import { WhatsAppWidget } from "@/components/store/whatsapp-widget";
+import { PopupBanner } from "@/components/store/banners/popup-banner";
 
 import type { Metadata } from "next";
 
@@ -38,6 +39,7 @@ export default function StoreLayout({
       </main>
       <StoreFooter />
       <BlogPopup />
+      <PopupBanner />
       <WhatsAppWidget />
     </div>
   );

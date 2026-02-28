@@ -30,6 +30,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { StoreSearch } from "@/components/store/store-search";
 
 const navigation = [
   { name: "Ana Sayfa", href: "/" },
@@ -61,7 +62,6 @@ const navigation = [
 export function StoreHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const { getCartCount, toggleCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
@@ -80,15 +80,6 @@ export function StoreHeader() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/urunler?search=${encodeURIComponent(searchQuery)}`);
-      setSearchOpen(false);
-      setSearchQuery("");
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -192,24 +183,9 @@ export function StoreHeader() {
             ))}
           </nav>
 
-          {/* Search bar */}
+          {/* Search bar (desktop) */}
           <div className="hidden md:flex flex-1 max-w-sm ml-auto mr-4">
-            <form onSubmit={handleSearch} className="relative w-full group">
-              <input
-                type="search"
-                placeholder="Ürün, kategori veya marka ara..."
-                className="w-full h-10 pl-4 pr-10 rounded-xl border bg-muted/30 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all text-sm"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors"
-                aria-label="Ara"
-              >
-                <Search className="h-4 w-4" />
-              </button>
-            </form>
+            <StoreSearch className="w-full" />
           </div>
 
           {/* Actions */}
@@ -408,33 +384,20 @@ export function StoreHeader() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Search */}
+      {/* Mobile Search overlay */}
       <AnimatePresence>
         {searchOpen && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute left-0 right-0 top-full bg-background/95 backdrop-blur-xl border-b p-4 md:hidden shadow-xl"
+            className="absolute left-0 right-0 top-full bg-background/95 backdrop-blur-xl border-b p-4 md:hidden shadow-xl z-50"
           >
-            <form onSubmit={handleSearch} className="relative">
-              <input
-                type="search"
-                placeholder="Ürün ara..."
-                className="w-full h-12 pl-4 pr-12 rounded-xl border bg-muted/30 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary text-base"
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
-                onClick={() => setSearchOpen(false)}
-                aria-label="Aramayı kapat"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </form>
+            <StoreSearch
+              mobile
+              onClose={() => setSearchOpen(false)}
+              placeholder="Ürün, marka veya kategori ara..."
+            />
           </motion.div>
         )}
       </AnimatePresence>

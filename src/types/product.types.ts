@@ -55,11 +55,17 @@ export interface ProductFilters {
   search?: string;
   categoryId?: number;
   brandId?: number;
-  isActive?: boolean;
+  isActive?: boolean | "all";
   isFeatured?: boolean;
   isNew?: boolean;
   hasDiscount?: boolean;
-  orderBy?: "price_asc" | "price_desc" | "name_asc" | "newest";
+  inStock?: boolean;
+  orderBy?:
+    | "price_asc" | "price_desc" | "name_asc" | "newest"
+    | "price:asc" | "price:desc"
+    | "name:asc" | "name:desc"
+    | "stock:asc" | "stock:desc"
+    | "createdAt:asc" | "createdAt:desc";
   minPrice?: number;
   maxPrice?: number;
   take?: number;

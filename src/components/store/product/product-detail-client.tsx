@@ -33,6 +33,7 @@ import {
 import { useCartStore } from "@/store/use-cart-store";
 import { useToast } from "@/hooks/use-toast";
 import { SimilarProducts } from "@/components/store/product/similar-products";
+import { ProductBanner } from "@/components/store/banners/product-banner";
 import { ComplementaryProducts } from "@/components/store/product/complementary-products";
 import { ProductChainSound } from "@/components/store/product/product-chain-sound";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks";
@@ -714,6 +715,9 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 							</TabsContent>
 						)}
 					</Tabs>
+
+					{/* Ürün banner */}
+					<ProductBanner />
 
 					{/* Benzer Ürünler */}
 					<SimilarProducts
