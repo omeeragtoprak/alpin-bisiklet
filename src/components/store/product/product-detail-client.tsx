@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import {
@@ -41,6 +41,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { getProductPricing } from "@/lib/pricing";
 import type { ActiveDiscount } from "@/lib/pricing";
+import { trackViewItem, trackAddToCart } from "@/lib/analytics";
 
 const ProductModelViewer = dynamic(
 	() =>
@@ -150,6 +151,14 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 				category: product.category?.name || "Genel",
 			});
 		}
+		trackAddToCart({
+			item_id: product.id,
+			item_name: product.name,
+			item_category: product.category?.name,
+			item_brand: product.brand?.name,
+			price: effectivePrice,
+			quantity,
+		});
 		toast({
 			title: "Sepete Eklendi",
 			description: `${quantity} adet ${product.name} sepete eklendi.`,
@@ -180,6 +189,18 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 	);
 	const pricing = getProductPricing(product, applicable);
 	const { effectivePrice, originalPrice, discountPercent } = pricing;
+
+	// view_item — fiyat hesaplandıktan sonra bir kez ateşle
+	useEffect(() => {
+		trackViewItem({
+			item_id: product.id,
+			item_name: product.name,
+			item_category: product.category?.name,
+			item_brand: product.brand?.name,
+			price: effectivePrice,
+		});
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [product.id]);
 
 	return (
 		<>

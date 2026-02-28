@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { useCartSync } from "@/hooks/use-cart-sync";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +70,9 @@ export function StoreHeader() {
   const user = session?.user as any;
   const router = useRouter();
 
+  // Login/logout'ta Zustand ↔ DB senkronizasyonu
+  useCartSync();
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -82,6 +86,7 @@ export function StoreHeader() {
   }, []);
 
   const handleSignOut = async () => {
+    useCartStore.getState().clearCart();
     await signOut();
     router.refresh();
   };

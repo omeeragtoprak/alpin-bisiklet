@@ -23,6 +23,7 @@ import {
   ChevronsRight,
   Plus,
   Loader2,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { ProductsSearchInput } from "./products-search-input";
@@ -313,6 +314,12 @@ export function ProductsClient({ initialData }: { initialData: ProductsData }) {
     <div className="space-y-6">
       {/* Başlık */}
       <PageHeader title="Ürünler" description="Tüm ürünleri yönetin">
+        <Button variant="outline" asChild>
+          <Link href="/admin/urunler/import">
+            <Upload className="mr-2 h-4 w-4" />
+            Toplu Yükle
+          </Link>
+        </Button>
         <Button asChild>
           <Link href="/admin/urunler/yeni">
             <Plus className="mr-2 h-4 w-4" />

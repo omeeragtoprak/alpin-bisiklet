@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/providers";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { OrganizationSchema, WebSiteSchema } from "@/components/seo/json-ld";
 
@@ -21,6 +22,7 @@ const geistMono = Geist_Mono({
 import { Toaster } from "sileo";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://alpinbisiklet.com";
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -97,6 +99,22 @@ export default function RootLayout({
   return (
     <html lang="tr" suppressHydrationWarning>
       <body className={inter.className}>
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_ID}', { send_page_view: true });
+              `}
+            </Script>
+          </>
+        )}
         <Providers>
           <ThemeProvider
             attribute="class"

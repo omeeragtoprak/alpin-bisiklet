@@ -1,9 +1,13 @@
 import { writeFile, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB (orijinal — sharp sonrası çok küçülür)
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+
+// Sharp ile işlenecek raster formatlar (SVG/GIF pass-through)
+const RASTER_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
@@ -12,6 +16,11 @@ const ALLOWED_IMAGE_TYPES = [
   "image/gif",
   "image/svg+xml",
 ];
+
+// Ürün görseli max boyutu (daha büyükse küçültülür, oran korunur)
+const MAX_IMAGE_WIDTH = 1600;
+const MAX_IMAGE_HEIGHT = 1600;
+const WEBP_QUALITY = 82; // 0-100
 
 const ALLOWED_VIDEO_TYPES = [
   "video/mp4",
@@ -52,7 +61,8 @@ function generateUniqueFilename(originalName: string): string {
 }
 
 /**
- * Görsel yükler
+ * Görsel yükler — raster formatları WebP'ye dönüştürür ve boyutu kısıtlar.
+ * SVG ve GIF pass-through (dönüştürülmez).
  */
 export async function uploadImage(file: File): Promise<UploadResult> {
   try {
@@ -72,17 +82,43 @@ export async function uploadImage(file: File): Promise<UploadResult> {
       };
     }
 
-    const filename = generateUniqueFilename(file.name);
     const uploadDir = path.join(UPLOAD_DIR, "images");
-    const filepath = path.join(uploadDir, filename);
-
-    // Klasör yoksa oluştur
     await mkdir(uploadDir, { recursive: true });
 
-    // Dosyayı kaydet
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    const inputBuffer = Buffer.from(bytes);
+
+    let outputBuffer: Buffer;
+    let filename: string;
+
+    if (RASTER_IMAGE_TYPES.includes(file.type)) {
+      // WebP'ye dönüştür + max boyut kısıtla (oran korunur)
+      outputBuffer = await sharp(inputBuffer)
+        .resize(MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, {
+          fit: "inside",          // oran korunur, taşmaz
+          withoutEnlargement: true, // küçük görseller büyütülmez
+        })
+        .webp({ quality: WEBP_QUALITY })
+        .toBuffer();
+
+      // Uzantıyı .webp olarak değiştir
+      const baseName = path.basename(file.name, path.extname(file.name));
+      const slug = baseName
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "-")
+        .replace(/-+/g, "-")
+        .slice(0, 50);
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 8);
+      filename = `${slug}-${timestamp}-${random}.webp`;
+    } else {
+      // SVG / GIF — olduğu gibi kaydet
+      outputBuffer = inputBuffer;
+      filename = generateUniqueFilename(file.name);
+    }
+
+    const filepath = path.join(uploadDir, filename);
+    await writeFile(filepath, outputBuffer);
 
     return {
       success: true,

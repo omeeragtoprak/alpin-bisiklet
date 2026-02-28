@@ -49,7 +49,7 @@ export default function BrandsPage() {
                                 transition={{ delay: index * 0.05 }}
                             >
                                 <Link
-                                    href={`/urunler?brandId=${brand.id}`}
+                                    href={`/markalar/${brand.slug}`}
                                     className="group block bg-card border rounded-xl p-6 hover:shadow-lg hover:border-primary/30 transition-all text-center"
                                 >
                                     {brand.logo ? (

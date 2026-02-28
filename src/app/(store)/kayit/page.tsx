@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 
 export default function RegisterPage() {
 	const router = useRouter();
@@ -179,6 +180,17 @@ export default function RegisterPage() {
 							{loading ? "Kayıt yapılıyor..." : "Üye Ol"}
 							<ArrowRight className="ml-2 h-4 w-4" />
 						</Button>
+
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<span className="w-full border-t" />
+							</div>
+							<div className="relative flex justify-center text-xs uppercase">
+								<span className="bg-background px-2 text-muted-foreground">veya</span>
+							</div>
+						</div>
+
+						<GoogleSignInButton label="Google ile üye ol" />
 
 						<p className="text-center text-sm text-muted-foreground">
 							Zaten hesabınız var mı?{" "}

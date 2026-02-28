@@ -37,6 +37,7 @@ import { CITY_NAMES, getDistricts } from "@/data/turkey-cities";
 import { TURKISH_PHONE_REGEX } from "@/lib/phone";
 import { useSession } from "@/lib/auth-client";
 import { Tag, X, Info } from "lucide-react";
+import { trackBeginCheckout, trackPurchase } from "@/lib/analytics";
 
 interface Address {
     id: string;
@@ -183,6 +184,19 @@ export default function CheckoutPage() {
             return res.json();
         },
         onSuccess: (data) => {
+            trackPurchase({
+                transactionId: data.data.orderNumber,
+                value: total,
+                shipping: shippingCost,
+                coupon: couponApplied ? couponCode : undefined,
+                items: items.map((item) => ({
+                    item_id: item.id,
+                    item_name: item.name,
+                    item_category: item.category,
+                    price: item.price,
+                    quantity: item.quantity,
+                })),
+            });
             clearCart();
             toast({ title: "Sipariş oluşturuldu!", description: `Sipariş No: ${data.data.orderNumber}` });
             router.push(`/hesabim/siparislerim`);
@@ -207,6 +221,23 @@ export default function CheckoutPage() {
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const shippingCost = subtotal >= 500 ? 0 : 50;
     const total = subtotal + shippingCost - couponDiscount;
+
+    // begin_checkout — sepet yüklendikten sonra bir kez ateşle
+    useEffect(() => {
+        if (items.length === 0) return;
+        trackBeginCheckout(
+            items.map((item) => ({
+                item_id: item.id,
+                item_name: item.name,
+                item_category: item.category,
+                price: item.price,
+                quantity: item.quantity,
+            })),
+            total,
+            couponApplied ? couponCode : undefined,
+        );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     if (items.length === 0) {
         return (
