@@ -34,7 +34,7 @@ export function SimilarProducts({
 					{[1, 2, 3, 4].map((i) => (
 						<div
 							key={i}
-							className="w-[280px] flex-shrink-0 aspect-[3/4] bg-muted animate-pulse rounded-2xl"
+							className="w-[200px] sm:w-[240px] md:w-[280px] flex-shrink-0 aspect-[3/4] bg-muted animate-pulse rounded-2xl"
 						/>
 					))}
 				</div>
@@ -102,7 +102,7 @@ export function SimilarProducts({
 						whileInView={{ opacity: 1, y: 0 }}
 						viewport={{ once: true }}
 						transition={{ duration: 0.4, delay: index * 0.05 }}
-						className="w-[260px] md:w-[280px] flex-shrink-0 snap-start"
+						className="w-[200px] sm:w-[240px] md:w-[280px] flex-shrink-0 snap-start"
 					>
 						<ProductCard product={product} />
 					</motion.div>

@@ -76,7 +76,7 @@ export function ProductCard({ product }: ProductCardProps) {
 	return (
 		<div className="group relative bg-card rounded-2xl overflow-hidden border hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 h-full flex flex-col">
 			{/* Image */}
-			<div className="relative aspect-square bg-gradient-to-br from-muted/50 to-muted p-6">
+			<div className="relative aspect-square bg-gradient-to-br from-muted/50 to-muted p-3 md:p-6 w-full">
 				{product.images?.[0] ? (
 					<Image
 						src={product.images[0].url}
@@ -92,7 +92,7 @@ export function ProductCard({ product }: ProductCardProps) {
 				)}
 
 				{/* Badges */}
-				<div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+				<div className="absolute top-2 left-2 md:top-3 md:left-3 flex flex-col gap-1 z-10 items-start max-w-[70%]">
 					{product.isNew && (
 						<span className="bg-accent text-accent-foreground text-[10px] font-bold uppercase px-2.5 py-1 rounded-md">
 							Yeni
@@ -126,44 +126,43 @@ export function ProductCard({ product }: ProductCardProps) {
 						aria-label={isFavorited ? "Favorilerden çıkar" : "Favorilere ekle"}
 					>
 						<Heart
-							className={`h-4 w-4 transition-colors ${
-								isFavorited ? "fill-destructive text-destructive" : ""
-							}`}
+							className={`h-4 w-4 transition-colors ${isFavorited ? "fill-destructive text-destructive" : ""
+								}`}
 						/>
 					</Button>
 				</div>
 			</div>
 
 			{/* Info */}
-			<div className="p-5 flex flex-col flex-1">
+			<div className="p-3 md:p-5 flex flex-col flex-1 min-w-0">
 				{product.category?.name && (
-					<span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1.5">
+					<span className="text-[10px] md:text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1 md:mb-1.5 truncate">
 						{product.category.name}
 					</span>
 				)}
-				<h3 className="font-semibold line-clamp-2 mb-3 group-hover:text-primary transition-colors leading-snug">
+				<h3 className="font-semibold text-sm md:text-base line-clamp-2 mb-2 md:mb-3 group-hover:text-primary transition-colors leading-snug break-words">
 					<Link href={`/urunler/${product.slug}`}>{product.name}</Link>
 				</h3>
 
-				<div className="mt-auto space-y-3">
-					<div className="flex items-baseline gap-2">
-						<span className="text-xl font-black text-primary">
+				<div className="mt-auto space-y-2 md:space-y-3">
+					<div className="flex items-baseline flex-wrap gap-1 md:gap-2">
+						<span className="text-base md:text-xl font-black text-primary truncate max-w-full">
 							{pricing.effectivePrice.toLocaleString("tr-TR")} ₺
 						</span>
 						{pricing.originalPrice && (
-							<span className="text-sm text-muted-foreground line-through">
+							<span className="text-xs md:text-sm text-muted-foreground line-through truncate max-w-full">
 								{pricing.originalPrice.toLocaleString("tr-TR")} ₺
 							</span>
 						)}
 					</div>
 					<Button
-						className="w-full rounded-xl h-10 text-sm font-semibold hover:brightness-75 transition-all"
+						className="w-full rounded-lg md:rounded-xl h-9 md:h-10 text-xs md:text-sm font-semibold hover:brightness-75 transition-all text-center px-2"
 						variant="default"
 						disabled={product.stock <= 0}
 						onClick={handleAddToCart}
 					>
-						<ShoppingCart className="mr-2 h-4 w-4" />
-						Sepete Ekle
+						<ShoppingCart className="mr-1.5 md:mr-2 h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
+						<span className="truncate">Sepete Ekle</span>
 					</Button>
 				</div>
 			</div>

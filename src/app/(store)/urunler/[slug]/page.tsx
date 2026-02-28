@@ -77,11 +77,11 @@ export default async function ProductDetailPage({ params }: Props) {
 		{ name: "Ürünler", url: "/urunler" },
 		...(product.category
 			? [
-					{
-						name: product.category.name,
-						url: `/urunler?kategori=${product.category.slug}`,
-					},
-				]
+				{
+					name: product.category.name,
+					url: `/urunler?kategori=${product.category.slug}`,
+				},
+			]
 			: []),
 		{ name: product.name, url: `/urunler/${slug}` },
 	];
@@ -108,32 +108,32 @@ export default async function ProductDetailPage({ params }: Props) {
 
 			{/* Breadcrumb */}
 			<nav
-				className="flex items-center gap-1 text-sm text-muted-foreground mb-6"
+				className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground mb-6 min-w-0"
 				aria-label="Breadcrumb"
 			>
-				<Link href="/" className="hover:text-primary transition-colors">
+				<Link href="/" className="hover:text-primary transition-colors whitespace-nowrap">
 					Ana Sayfa
 				</Link>
-				<ChevronRight className="h-3 w-3" aria-hidden="true" />
+				<ChevronRight className="h-3 w-3 shrink-0" aria-hidden="true" />
 				<Link
 					href="/urunler"
-					className="hover:text-primary transition-colors"
+					className="hover:text-primary transition-colors whitespace-nowrap"
 				>
 					Ürünler
 				</Link>
 				{product.category && (
 					<>
-						<ChevronRight className="h-3 w-3" aria-hidden="true" />
+						<ChevronRight className="h-3 w-3 shrink-0" aria-hidden="true" />
 						<Link
 							href={`/urunler?kategori=${product.category.slug}`}
-							className="hover:text-primary transition-colors"
+							className="hover:text-primary transition-colors whitespace-nowrap"
 						>
 							{product.category.name}
 						</Link>
 					</>
 				)}
-				<ChevronRight className="h-3 w-3" aria-hidden="true" />
-				<span className="text-foreground font-medium truncate max-w-[200px]">
+				<ChevronRight className="h-3 w-3 shrink-0" aria-hidden="true" />
+				<span className="text-foreground font-medium truncate max-w-full sm:max-w-[200px]">
 					{product.name}
 				</span>
 			</nav>

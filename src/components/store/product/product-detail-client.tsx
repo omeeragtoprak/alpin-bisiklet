@@ -70,12 +70,12 @@ type ProductReview = {
 type GalleryItem =
 	| { kind: "image"; id: number; url: string; alt?: string | null }
 	| {
-			kind: "video";
-			id: number;
-			url: string;
-			thumbnail?: string | null;
-			title?: string | null;
-	  };
+		kind: "video";
+		id: number;
+		url: string;
+		thumbnail?: string | null;
+		title?: string | null;
+	};
 
 export type ProductDetailData = {
 	id: number;
@@ -199,7 +199,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 			item_brand: product.brand?.name,
 			price: effectivePrice,
 		});
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [product.id]);
 
 	return (
@@ -207,19 +207,18 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 			{/* Bicycle chain sound — plays once on mount for bicycle category */}
 			<ProductChainSound enabled={isBicycle} />
 
-			<div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 w-full max-w-full min-w-0 overflow-hidden">
 				{/* Gallery */}
-				<div className="space-y-4">
+				<div className="space-y-4 min-w-0 w-full max-w-full">
 					<motion.div
 						initial={{ opacity: 0, scale: 0.95 }}
 						animate={{ opacity: 1, scale: 1 }}
-						className={`aspect-square bg-white rounded-2xl overflow-hidden relative border select-none ${
-							currentItem?.kind === "image" && isZooming
+						className={`w-full aspect-[4/3] md:aspect-square max-h-[350px] md:max-h-none bg-white rounded-2xl overflow-hidden relative border select-none ${currentItem?.kind === "image" && isZooming
 								? "cursor-crosshair"
 								: currentItem?.kind === "image"
 									? "cursor-zoom-in"
 									: ""
-						}`}
+							}`}
 						onMouseMove={
 							currentItem?.kind === "image"
 								? handleMouseMove
@@ -263,13 +262,13 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 								style={
 									isZooming
 										? {
-												transform: "scale(2.5)",
-												transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-											}
+											transform: "scale(2.5)",
+											transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+										}
 										: {
-												transform: "scale(1)",
-												transition: "transform 0.25s ease-out",
-											}
+											transform: "scale(1)",
+											transition: "transform 0.25s ease-out",
+										}
 								}
 							>
 								<Image
@@ -334,11 +333,10 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 									key={`${item.kind}-${item.id}`}
 									type="button"
 									onClick={() => setSelectedIndex(idx)}
-									className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors relative ${
-										selectedIndex === idx
+									className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors relative ${selectedIndex === idx
 											? "border-primary ring-2 ring-primary/20"
 											: "border-transparent hover:border-muted-foreground/30"
-									}`}
+										}`}
 								>
 									{item.kind === "video" ? (
 										<>
@@ -378,8 +376,8 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 				</div>
 
 				{/* Product Info */}
-				<div className="space-y-6">
-					<div>
+				<div className="space-y-5 md:space-y-6 min-w-0 w-full max-w-full flex-1">
+					<div className="min-w-0 w-full break-words">
 						{product.brand?.name && (
 							<p className="text-sm text-primary font-medium mb-1">
 								{product.brand.name}
@@ -396,8 +394,8 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 					</div>
 
 					{/* Price */}
-					<div className="flex items-baseline gap-3 flex-wrap">
-						<span className="text-3xl lg:text-4xl font-bold text-primary">
+					<div className="flex items-baseline gap-2 md:gap-3 flex-wrap min-w-0 w-full">
+						<span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary break-all sm:break-normal">
 							{effectivePrice.toLocaleString("tr-TR")} TL
 						</span>
 						{originalPrice !== null && (
@@ -426,7 +424,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 					<Separator />
 
 					{/* Stock Status */}
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
 						{product.stock > 0 ? (
 							<>
 								<div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
@@ -501,11 +499,11 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 					</div>
 
 					{/* Actions */}
-					<div className="space-y-3">
-						<div className="flex gap-3">
+					<div className="space-y-3 w-full min-w-0">
+						<div className="flex gap-2 md:gap-3 w-full">
 							<Button
 								size="lg"
-								className="flex-1 h-12 text-base"
+								className="flex-1 h-12 text-sm md:text-base px-2 md:px-4"
 								onClick={handleAddToCart}
 								disabled={product.stock === 0}
 							>
@@ -524,11 +522,10 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 								}
 							>
 								<Heart
-									className={`h-5 w-5 ${
-										isFavorited
+									className={`h-5 w-5 ${isFavorited
 											? "fill-destructive text-destructive"
 											: ""
-									}`}
+										}`}
 								/>
 							</Button>
 							<Button size="lg" variant="outline" className="h-12">
@@ -542,18 +539,18 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 							href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "905321234567"}?text=${encodeURIComponent(`Merhaba, "${product.name}" ürünü hakkında bilgi almak istiyorum.\n\n${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/urunler/${product.slug}`)}`}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="flex items-center gap-3 w-full h-12 rounded-lg border-2 border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white px-5 font-semibold text-sm transition-all group"
+							className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full min-h-12 py-2 sm:py-0 rounded-lg border-2 border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white px-3 sm:px-5 font-semibold text-xs sm:text-sm transition-all group"
 						>
 							<svg
 								viewBox="0 0 24 24"
 								fill="currentColor"
-								className="h-5 w-5 shrink-0"
+								className="h-4 w-4 sm:h-5 sm:w-5 shrink-0"
 								aria-hidden="true"
 							>
 								<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
 							</svg>
 							<span>WhatsApp ile Bilgi Al</span>
-							<span className="ml-auto text-xs font-normal opacity-60 group-hover:opacity-80">
+							<span className="sm:ml-auto text-[10px] sm:text-xs font-normal opacity-60 group-hover:opacity-80">
 								⚡ Hızlı yanıt
 							</span>
 						</a>
@@ -569,14 +566,14 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 						].map((badge) => (
 							<div
 								key={badge.title}
-								className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg"
+								className="flex items-center gap-1.5 md:gap-2 p-2 md:p-3 bg-muted/30 rounded-lg min-w-0"
 							>
-								<badge.icon className="h-5 w-5 text-primary shrink-0" />
-								<div>
-									<p className="font-medium text-xs">
+								<badge.icon className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
+								<div className="min-w-0 overflow-hidden">
+									<p className="font-medium text-[10px] md:text-xs truncate">
 										{badge.title}
 									</p>
-									<p className="text-[10px] text-muted-foreground">
+									<p className="text-[9px] md:text-[10px] text-muted-foreground truncate">
 										{badge.sub}
 									</p>
 								</div>
@@ -586,18 +583,18 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 				</div>
 
 				{/* Tabs — full width, col-span */}
-				<div className="lg:col-span-2 mt-4">
-					<Tabs defaultValue="description">
-						<TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
+				<div className="lg:col-span-2 mt-4 min-w-0 w-full max-w-full overflow-hidden">
+					<Tabs defaultValue="description" className="w-full">
+						<TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent flex flex-wrap gap-y-2 pb-1">
 							<TabsTrigger
 								value="description"
-								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
+								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none whitespace-nowrap"
 							>
 								Açıklama
 							</TabsTrigger>
 							<TabsTrigger
 								value="specs"
-								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
+								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none whitespace-nowrap"
 							>
 								Özellikler
 							</TabsTrigger>
@@ -621,10 +618,10 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 							)}
 						</TabsList>
 
-						<TabsContent value="description" className="mt-6">
-							<div className="prose prose-neutral max-w-none">
+						<TabsContent value="description" className="mt-6 min-w-0 w-full break-words">
+							<div className="prose prose-neutral min-w-0 w-full max-w-full overflow-hidden">
 								{product.description ? (
-									<p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+									<p className="text-muted-foreground leading-relaxed whitespace-pre-line break-words w-full">
 										{product.description}
 									</p>
 								) : (
@@ -718,11 +715,10 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 															{Array.from({ length: 5 }).map((_, i) => (
 																<Star
 																	key={`star-${review.id}-${i}`}
-																	className={`h-3 w-3 ${
-																		i < review.rating
+																	className={`h-3 w-3 ${i < review.rating
 																			? "text-yellow-500 fill-yellow-500"
 																			: "text-muted-foreground"
-																	}`}
+																		}`}
 																/>
 															))}
 														</div>

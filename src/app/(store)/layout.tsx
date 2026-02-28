@@ -31,10 +31,10 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-hidden w-full max-w-[100vw]">
       <CartDrawer />
       <StoreHeader />
-      <main className="flex-1">
+      <main className="flex-1 w-full max-w-[100vw] overflow-x-hidden">
         <PageTransition>{children}</PageTransition>
       </main>
       <StoreFooter />
