@@ -18,6 +18,7 @@ import {
   ShoppingCart,
   Tags,
   Ticket,
+  TrendingDown,
   Users,
   Home,
 } from "lucide-react";
@@ -68,6 +69,7 @@ const navMain: NavItem[] = [
     items: [
       { title: "Tüm Ürünler", url: "/admin/urunler" },
       { title: "Yeni Ürün", url: "/admin/urunler/yeni" },
+      { title: "İndirimler", url: "/admin/indirimler" },
     ],
   },
   { title: "Kategoriler", url: "/admin/kategoriler", icon: Tags },
@@ -75,7 +77,14 @@ const navMain: NavItem[] = [
   { title: "Siparişler", url: "/admin/siparisler", icon: ShoppingCart },
   { title: "Elden Taksit", url: "/admin/elden-taksit", icon: Landmark },
   { title: "Müşteriler", url: "/admin/musteriler", icon: Users },
-  { title: "Kuponlar", url: "/admin/kuponlar", icon: Ticket },
+  {
+    title: "Kuponlar",
+    icon: Ticket,
+    items: [
+      { title: "Tüm Kuponlar", url: "/admin/kuponlar" },
+      { title: "Yeni Kupon", url: "/admin/kuponlar/yeni" },
+    ],
+  },
   { title: "Bannerlar", url: "/admin/bannerlar", icon: ImageIcon },
   { title: "Sayfalar", url: "/admin/sayfalar", icon: FileText },
   { title: "Blog", url: "/admin/blog", icon: FileText },

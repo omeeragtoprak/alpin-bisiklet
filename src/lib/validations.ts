@@ -273,9 +273,14 @@ export const createCouponSchema = z.object({
   minPurchase: z.number().positive().optional().nullable(),
   maxDiscount: z.number().positive().optional().nullable(),
   maxUses: z.number().int().positive().optional().nullable(),
+  maxUsesPerUser: z.number().int().positive().optional().nullable(),
+  minQuantity: z.number().int().positive().optional().nullable(),
+  firstOrderOnly: z.boolean().default(false),
   validFrom: z.string().or(z.date()),
   validTo: z.string().or(z.date()),
   isActive: z.boolean().default(true),
+  categoryIds: z.array(z.number().int()).optional(),
+  productIds: z.array(z.number().int()).optional(),
 });
 
 /** Kupon guncelleme schema'si */

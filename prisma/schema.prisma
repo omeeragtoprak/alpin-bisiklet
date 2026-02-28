@@ -123,9 +123,10 @@ model Category {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   type        CategoryType @default(GENERAL)
-  parent      Category?    @relation("CategoryToCategory", fields: [parentId], references: [id])
-  children    Category[]   @relation("CategoryToCategory")
-  products    Product[]
+  parent         Category?        @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children       Category[]       @relation("CategoryToCategory")
+  products       Product[]
+  couponCategories CouponCategory[]
 
   @@map("categories")
 }
@@ -183,6 +184,7 @@ model Product {
   brand            Brand?             @relation(fields: [brandId], references: [id])
   category         Category?          @relation(fields: [categoryId], references: [id])
   reviews          Review[]
+  couponProducts   CouponProduct[]
 
   @@index([categoryId])
   @@index([brandId])
@@ -398,23 +400,47 @@ model Payment {
 }
 
 model Coupon {
-  id             Int        @id @default(autoincrement())
-  code           String     @unique
+  id             Int             @id @default(autoincrement())
+  code           String          @unique
   type           CouponType
   value          Float
   minPurchase    Float?
   maxDiscount    Float?
   maxUses        Int?
-  usedCount      Int        @default(0)
+  usedCount      Int             @default(0)
   maxUsesPerUser Int?
+  minQuantity    Int?
+  firstOrderOnly Boolean         @default(false)
   validFrom      DateTime
   validTo        DateTime
-  isActive       Boolean    @default(true)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   orders         Order[]
+  categories     CouponCategory[]
+  products       CouponProduct[]
 
   @@map("coupons")
+}
+
+model CouponCategory {
+  couponId   Int
+  categoryId Int
+  coupon     Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, categoryId])
+  @@map("coupon_categories")
+}
+
+model CouponProduct {
+  couponId  Int
+  productId Int
+  coupon    Coupon  @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, productId])
+  @@map("coupon_products")
 }
 
 model Banner {

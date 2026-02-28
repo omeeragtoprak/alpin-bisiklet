@@ -779,6 +779,30 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
                                 />
                                 <FormField
                                     control={form.control}
+                                    name="comparePrice"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Karşılaştırma Fiyatı (TL)</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Üstü çizili gösterilecek eski fiyat"
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                    onChange={(e) =>
+                                                        field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Bu fiyat ürün kartında üstü çizili olarak gösterilir (indirim badge'i için).
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
                                     name="stock"
                                     render={({ field }) => (
                                         <FormItem>
@@ -932,3 +956,4 @@ export function ProductForm({ initialData, initialBarcode }: ProductFormProps) {
         </Form>
     );
 }
+

@@ -39,6 +39,7 @@ import { ProductChainSound } from "@/components/store/product/product-chain-soun
 import { useFavoriteIds, useToggleFavorite } from "@/hooks";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { getProductPricing } from "@/lib/pricing";
 
 const ProductModelViewer = dynamic(
 	() =>
@@ -142,7 +143,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 			addItem({
 				id: product.id.toString(),
 				name: product.name,
-				price: Number(product.price),
+				price: effectivePrice,
 				image: product.images?.[0]?.url || "",
 				slug: product.slug,
 				category: product.category?.name || "Genel",
@@ -170,14 +171,8 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 
 	const isFavorited = favoriteIds.has(product.id);
 
-	const discount =
-		product.comparePrice && product.comparePrice > product.price
-			? Math.round(
-					((product.comparePrice - product.price) /
-						product.comparePrice) *
-						100,
-				)
-			: 0;
+	const pricing = getProductPricing(product);
+	const { effectivePrice, originalPrice, discountPercent } = pricing;
 
 	return (
 		<>
@@ -264,9 +259,9 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 							</div>
 						)}
 
-						{discount > 0 && currentItem?.kind === "image" && (
+						{discountPercent > 0 && currentItem?.kind === "image" && (
 							<div className="absolute top-4 left-4 z-10 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full pointer-events-none">
-								%{discount}
+								%{discountPercent}
 							</div>
 						)}
 
@@ -373,21 +368,18 @@ export function ProductDetailClient({ product }: { product: ProductDetailData })
 					</div>
 
 					{/* Price */}
-					<div className="flex items-baseline gap-3">
+					<div className="flex items-baseline gap-3 flex-wrap">
 						<span className="text-3xl lg:text-4xl font-bold text-primary">
-							{Number(product.price).toLocaleString("tr-TR")} TL
+							{effectivePrice.toLocaleString("tr-TR")} TL
 						</span>
-						{product.comparePrice && (
+						{originalPrice !== null && (
 							<span className="text-lg text-muted-foreground line-through">
-								{Number(product.comparePrice).toLocaleString(
-									"tr-TR",
-								)}{" "}
-								TL
+								{originalPrice.toLocaleString("tr-TR")} TL
 							</span>
 						)}
-						{discount > 0 && (
+						{discountPercent > 0 && (
 							<span className="bg-red-100 text-red-700 text-sm font-semibold px-2 py-0.5 rounded">
-								%{discount} İndirim
+								%{discountPercent} İndirim
 							</span>
 						)}
 					</div>

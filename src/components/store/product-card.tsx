@@ -10,6 +10,7 @@ import { useCartStore } from "@/store/use-cart-store";
 import { useToast } from "@/hooks/use-toast";
 import { authClient } from "@/lib/auth-client";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks";
+import { getProductPricing } from "@/lib/pricing";
 
 interface ProductCardProps {
 	product: ProductListItem;
@@ -24,6 +25,7 @@ export function ProductCard({ product }: ProductCardProps) {
 	const toggleFavorite = useToggleFavorite();
 
 	const isFavorited = favoriteIds.has(product.id);
+	const pricing = getProductPricing(product);
 
 	const handleAddToCart = (e: React.MouseEvent) => {
 		e.preventDefault();
@@ -31,7 +33,7 @@ export function ProductCard({ product }: ProductCardProps) {
 		addItem({
 			id: product.id.toString(),
 			name: product.name,
-			price: product.price,
+			price: pricing.effectivePrice,
 			image: product.images?.[0]?.url || "",
 			slug: product.slug,
 			category: product.category?.name || "Genel",
@@ -89,9 +91,9 @@ export function ProductCard({ product }: ProductCardProps) {
 							Yeni
 						</span>
 					)}
-					{product.comparePrice && product.comparePrice > product.price && (
+					{pricing.isOnSale && (
 						<span className="bg-destructive text-white text-[10px] font-bold px-2.5 py-1 rounded-md">
-							%{Math.round((1 - product.price / product.comparePrice) * 100)} İndirim
+							%{pricing.discountPercent} İndirim
 						</span>
 					)}
 					{product.stock <= 0 && (
@@ -134,11 +136,11 @@ export function ProductCard({ product }: ProductCardProps) {
 				<div className="mt-auto space-y-3">
 					<div className="flex items-baseline gap-2">
 						<span className="text-xl font-black text-primary">
-							{product.price.toLocaleString("tr-TR")} ₺
+							{pricing.effectivePrice.toLocaleString("tr-TR")} ₺
 						</span>
-						{product.comparePrice && product.comparePrice > product.price && (
+						{pricing.originalPrice && (
 							<span className="text-sm text-muted-foreground line-through">
-								{product.comparePrice.toLocaleString("tr-TR")} ₺
+								{pricing.originalPrice.toLocaleString("tr-TR")} ₺
 							</span>
 						)}
 					</div>
