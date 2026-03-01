@@ -28,6 +28,7 @@ export async function GET(
       include: {
         categories: { include: { category: { select: { id: true, name: true } } } },
         products: { include: { product: { select: { id: true, name: true } } } },
+        user: { select: { id: true, name: true, email: true } },
         orders: { select: { id: true, orderNumber: true, total: true, createdAt: true } },
       },
     });
@@ -85,6 +86,7 @@ export async function PUT(
       include: {
         categories: { include: { category: { select: { id: true, name: true } } } },
         products: { include: { product: { select: { id: true, name: true } } } },
+        user: { select: { id: true, name: true, email: true } },
       },
     });
 

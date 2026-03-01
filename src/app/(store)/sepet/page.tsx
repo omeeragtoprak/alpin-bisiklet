@@ -5,16 +5,20 @@ import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Tag, X, Loader2 } from "l
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/store/use-cart-store";
+import { authClient } from "@/lib/auth-client";
 import { useMutation } from "@tanstack/react-query";
 
 export default function CartPage() {
 	const { toast } = useToast();
+	const router = useRouter();
+	const { data: session } = authClient.useSession();
 	const { items, removeItem, updateQuantity } = useCartStore();
 
 	// Kupon state'i
@@ -215,7 +219,14 @@ export default function CartPage() {
 										<Tag className="h-4 w-4" />
 										Kupon Kodu
 									</p>
-									{appliedCoupon ? (
+									{!session ? (
+										<p className="text-sm text-muted-foreground">
+											<Link href="/giris?redirect=/sepet" className="text-primary underline underline-offset-2">
+												Giriş yapın
+											</Link>{" "}
+											kupon kullanmak için
+										</p>
+									) : appliedCoupon ? (
 										<div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
 											<div>
 												<span className="font-mono text-sm font-bold text-green-700">{appliedCoupon.code}</span>
@@ -270,11 +281,19 @@ export default function CartPage() {
 									</span>
 								</div>
 
-								<Button size="lg" className="w-full" asChild>
-									<Link href="/odeme">
-										Ödemeye Geç
-										<ArrowRight className="ml-2 h-5 w-5" />
-									</Link>
+								<Button
+									size="lg"
+									className="w-full"
+									onClick={() => {
+										if (!session) {
+											router.push("/giris?redirect=/odeme");
+											return;
+										}
+										router.push("/odeme");
+									}}
+								>
+									Ödemeye Geç
+									<ArrowRight className="ml-2 h-5 w-5" />
 								</Button>
 
 								<Button variant="outline" className="w-full" asChild>

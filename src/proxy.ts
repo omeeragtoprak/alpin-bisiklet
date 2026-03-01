@@ -70,7 +70,7 @@ export function proxy(request: NextRequest) {
   response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://alpinbisiklet.com https://*.alpinbisiklet.com https://images.unsplash.com https://*.unsplash.com; font-src 'self' data:; connect-src 'self' blob: https://sandbox-api.iyzipay.com https://api.iyzipay.com; worker-src 'self' blob:; frame-src 'self' https://sandbox-api.iyzipay.com https://api.iyzipay.com;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://alpinbisiklet.com https://*.alpinbisiklet.com https://images.unsplash.com https://*.unsplash.com https://www.google-analytics.com; font-src 'self' data:; connect-src 'self' blob: https://sandbox-api.iyzipay.com https://api.iyzipay.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com; worker-src 'self' blob:; frame-src 'self' https://sandbox-api.iyzipay.com https://api.iyzipay.com;"
   );
 
   // ============================================

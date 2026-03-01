@@ -143,8 +143,13 @@ export async function POST(request: NextRequest) {
 			if (coupon) {
 				let couponValid = true;
 
+				// Kullanıcıya özel kupon kontrolü
+				if (coupon.userId && coupon.userId !== session.user.id) {
+					couponValid = false;
+				}
+
 				// maxUses kontrolü
-				if (coupon.maxUses != null && coupon.usedCount >= coupon.maxUses) {
+				if (couponValid && coupon.maxUses != null && coupon.usedCount >= coupon.maxUses) {
 					couponValid = false;
 				}
 

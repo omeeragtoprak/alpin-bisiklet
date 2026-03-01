@@ -25,6 +25,7 @@ export default async function EditCouponPage({
     include: {
       categories: { include: { category: { select: { id: true, name: true } } } },
       products: { include: { product: { select: { id: true, name: true } } } },
+      user: { select: { id: true, name: true, email: true } },
     },
   });
 

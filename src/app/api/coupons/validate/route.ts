@@ -44,6 +44,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, message: "Geçersiz veya süresi dolmuş kupon kodu" });
     }
 
+    // Kullanıcıya özel kupon kontrolü
+    if (coupon.userId && coupon.userId !== session.user.id) {
+      return NextResponse.json({ valid: false, message: "Bu kupon size özel değil" });
+    }
+
     // maxUses kontrolü
     if (coupon.maxUses != null && coupon.usedCount >= coupon.maxUses) {
       return NextResponse.json({ valid: false, message: "Bu kupon maksimum kullanım sayısına ulaştı" });

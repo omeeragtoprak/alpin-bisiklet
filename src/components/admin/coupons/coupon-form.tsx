@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,99 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
+
+interface UserResult {
+  id: string;
+  name: string | null;
+  email: string;
+  phone: string | null;
+}
+
+function UserSearchCombobox({
+  value,
+  onSelect,
+}: {
+  value: UserResult | null;
+  onSelect: (user: UserResult | null) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<UserResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); setOpen(false); return; }
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/admin/users?search=${encodeURIComponent(query)}&limit=10`);
+        const data = await res.json();
+        setResults(data.data || []);
+        setOpen(true);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  if (value) {
+    return (
+      <div className="flex items-center justify-between border rounded-lg px-3 py-2 bg-muted/40">
+        <div className="flex items-center gap-2 min-w-0">
+          <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{value.name || "—"}</p>
+            <p className="text-xs text-muted-foreground truncate">{value.email}</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => onSelect(null)}>
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="İsim veya e-posta ile ara..."
+          className="pl-8"
+          onFocus={() => results.length > 0 && setOpen(true)}
+        />
+        {loading && <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+      </div>
+      {open && results.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 z-[200] border rounded-lg bg-background shadow-lg max-h-48 overflow-y-auto">
+          {results.map((u) => (
+            <button
+              key={u.id}
+              type="button"
+              className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
+              onClick={() => { onSelect(u); setQuery(""); setOpen(false); }}
+            >
+              <p className="text-sm font-medium">{u.name || "—"}</p>
+              <p className="text-xs text-muted-foreground">{u.email}{u.phone ? ` • ${u.phone}` : ""}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface CouponFormData {
   code: string;
@@ -47,6 +140,8 @@ interface CouponFormProps {
     maxUsesPerUser: number | null;
     minQuantity: number | null;
     firstOrderOnly: boolean;
+    userId?: string | null;
+    user?: { id: string; name: string | null; email: string } | null;
     validFrom: string;
     validTo: string;
     isActive: boolean;
@@ -60,6 +155,12 @@ type ScopeType = "all" | "categories" | "products";
 export function CouponForm({ initialData }: CouponFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  const [selectedUser, setSelectedUser] = useState<UserResult | null>(
+    initialData?.user
+      ? { id: initialData.user.id, name: initialData.user.name, email: initialData.user.email, phone: null }
+      : null,
+  );
 
   const [form, setForm] = useState<CouponFormData>({
     code: initialData?.code || "",
@@ -124,6 +225,7 @@ export function CouponForm({ initialData }: CouponFormProps) {
         maxUsesPerUser: form.maxUsesPerUser ? Number(form.maxUsesPerUser) : null,
         minQuantity: form.minQuantity ? Number(form.minQuantity) : null,
         firstOrderOnly: form.firstOrderOnly,
+        userId: selectedUser?.id ?? null,
         validFrom: new Date(form.validFrom),
         validTo: new Date(form.validTo),
         isActive: form.isActive,
@@ -253,7 +355,7 @@ export function CouponForm({ initialData }: CouponFormProps) {
       </Card>
 
       {/* Koşullar */}
-      <Card>
+      <Card className="overflow-visible">
         <CardHeader>
           <CardTitle>Koşullar</CardTitle>
         </CardHeader>
@@ -317,6 +419,13 @@ export function CouponForm({ initialData }: CouponFormProps) {
               onCheckedChange={(v) => setForm({ ...form, firstOrderOnly: v })}
             />
             <Label htmlFor="firstOrderOnly">Yalnızca İlk Sipariş</Label>
+          </div>
+          <div className="md:col-span-2 lg:col-span-3">
+            <Label>Kullanıcıya Özel</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Boş bırakılırsa tüm kullanıcılar kullanabilir. Seçilirse yalnızca seçilen kullanıcı kullanabilir.
+            </p>
+            <UserSearchCombobox value={selectedUser} onSelect={setSelectedUser} />
           </div>
         </CardContent>
       </Card>

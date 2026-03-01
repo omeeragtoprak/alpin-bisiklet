@@ -21,6 +21,7 @@ async function getCoupons() {
     include: {
       categories: { select: { category: { select: { name: true } } } },
       products: { select: { product: { select: { name: true } } } },
+      user: { select: { name: true, email: true } },
       _count: { select: { orders: true } },
     },
   });
@@ -66,6 +67,7 @@ export default async function CouponsPage() {
                     <th className="text-left p-4 text-sm font-medium">Kullanım</th>
                     <th className="text-left p-4 text-sm font-medium">Geçerlilik</th>
                     <th className="text-left p-4 text-sm font-medium">Kapsam</th>
+                    <th className="text-left p-4 text-sm font-medium">Kullanıcı</th>
                     <th className="text-left p-4 text-sm font-medium">Durum</th>
                     <th className="text-left p-4 text-sm font-medium">İşlem</th>
                   </tr>
@@ -111,6 +113,15 @@ export default async function CouponsPage() {
                           {new Date(coupon.validTo).toLocaleDateString("tr-TR")}
                         </td>
                         <td className="p-4 text-xs text-muted-foreground">{scope}</td>
+                        <td className="p-4 text-xs text-muted-foreground">
+                          {coupon.user ? (
+                            <span title={coupon.user.email} className="text-blue-600">
+                              {coupon.user.name || coupon.user.email}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Herkese açık</span>
+                          )}
+                        </td>
                         <td className="p-4">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${

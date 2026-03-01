@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
         include: {
           categories: { include: { category: { select: { id: true, name: true } } } },
           products: { include: { product: { select: { id: true, name: true } } } },
+          user: { select: { id: true, name: true, email: true } },
         },
       }),
       prisma.coupon.count(),
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
       include: {
         categories: { include: { category: { select: { id: true, name: true } } } },
         products: { include: { product: { select: { id: true, name: true } } } },
+        user: { select: { id: true, name: true, email: true } },
       },
     });
 
